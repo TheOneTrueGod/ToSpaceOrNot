@@ -1,5 +1,9 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { ShipState, Alert, SystemChangeIndicator } from '../types';
+import { ShipState, Alert, Gauge } from '../types';
+
+const isGauge = (value: unknown): value is Gauge => {
+  return typeof value === 'object' && value !== null && 'current' in value && 'max' in value;
+};
 
 const initialState: ShipState = {
   distanceToDestination: { current: 1000, max: 1000 },
@@ -35,9 +39,9 @@ const shipSlice = createSlice({
       isCurrentValue?: boolean;
     }>) => {
       const { system, value, isCurrentValue = true } = action.payload;
-      const systemValue = state[system] as any;
-      
-      if (typeof systemValue === 'object' && systemValue.hasOwnProperty('current')) {
+      const systemValue = state[system];
+
+      if (isGauge(systemValue)) {
         if (isCurrentValue) {
           systemValue.current = Math.max(0, Math.min(systemValue.max, systemValue.current + value));
         } else {

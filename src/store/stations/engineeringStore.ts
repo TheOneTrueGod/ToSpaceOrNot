@@ -20,24 +20,51 @@ export interface EngineeringState {
   panelOrder: string[];
 }
 
-const PANEL_NAMES = ['A1b2', 'Xy9Z', '3Fp7', 'Q8wS'];
-const COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b']; // red, blue, green, yellow
+const POTENTIAL_PANEL_NAMES = ['A1b2', 'Xy9Z', '3Fp7', 'Q8wS', 'B8z2', 'A1c2']
+const INPUT_PERMUTATIONS: number[][] = [
+  [1, 0, 3, 2],
+  [2, 3, 1, 0],
+  [3, 2, 0, 1],
+  [0, 2, 1, 3],
+  [1, 3, 0, 2],
+  [2, 0, 3, 1]
+]
+const OUTPUT_PERMUTATIONS: number[][] = [
+  [0, 1, 2, 3],
+  [1, 2, 3, 0],
+  [2, 3, 0, 1],
+  [3, 0, 1, 2],
+  [0, 2, 1, 3],
+  [1, 0, 3, 2]
+]
+const pickRandomUnique = (names: string[], count: number): string[] => {
+	// Fisher-Yates shuffle to ensure unbiased random order
+	const shuffled = [...names];
+	for (let i = shuffled.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+	}
+	return shuffled.slice(0, count);
+}
 
-export const generatePanelState = (): PanelState['connections'] => {
+export const PANEL_NAMES = pickRandomUnique(POTENTIAL_PANEL_NAMES, 4);
+
+export const generatePanelState = (panelId: string): PanelState['connections'] => {
 	const connections: WireConnection[] = [];
 
-	// Create a correct wiring pattern for each panel
+	const nameIndex = POTENTIAL_PANEL_NAMES.indexOf(panelId);
+	const inputPermutation = INPUT_PERMUTATIONS[(nameIndex >= 0 ? nameIndex : 0) % INPUT_PERMUTATIONS.length];
+	const outputPermutation = OUTPUT_PERMUTATIONS[(nameIndex >= 0 ? nameIndex : 0) % OUTPUT_PERMUTATIONS.length];
+
 	for (let i = 0; i < 4; i++) {
-		// Connect input to node
 		connections.push({
 			from: { type: 'input', index: i },
-			to: { type: 'node', index: i }
+			to: { type: 'node', index: inputPermutation[i] }
 		});
 
-		// Connect node to output (with some variation)
 		connections.push({
 			from: { type: 'node', index: i },
-			to: { type: 'output', index: (i + 1) % 4 }
+			to: { type: 'output', index: outputPermutation[i] }
 		});
 	}
 	return connections
@@ -47,7 +74,7 @@ export const generateEngineeringState = (): EngineeringState => {
 	const panels: { [key: string]: PanelState } = {};
 
 	PANEL_NAMES.forEach(panelName => {
-		panels[panelName] = { connections: generatePanelState() };
+		panels[panelName] = { connections: generatePanelState(panelName) };
 	});
 
 	return {

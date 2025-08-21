@@ -1,10 +1,12 @@
+// Narrow type for ship systems that use { current, max }
+export type Gauge = { current: number; max: number };
 export interface ShipState {
-  distanceToDestination: { current: number; max: number };
-  hullDamage: { current: number; max: number };
-  oxygenLevels: { current: number; max: number };
+  distanceToDestination: Gauge;
+  hullDamage: Gauge;
+  oxygenLevels: Gauge;
   navigationAlignment: number; // percentage
-  fuelLevels: { current: number; max: number };
-  batteryPower: { current: number; max: number };
+  fuelLevels: Gauge;
+  batteryPower: Gauge;
   gameClock: { minutes: number; seconds: number };
   alerts: Alert[];
 }

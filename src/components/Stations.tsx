@@ -2,14 +2,14 @@ import React, { useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import { setActiveStation } from '../store/stationStore';
-import { StationType, Player } from '../types';
+import { StationType } from '../types';
 import { Engineering } from '../stations/Engineering';
 
-const playerStations: Record<Player, StationType[]> = {
+/*const playerStations: Record<Player, StationType[]> = {
   'Gobi': ['Engineering', 'Weapons'],
   'Ben': ['Navigation', 'Science'],
-};
-const allStations = ['Navigation', 'Science', 'Weapons', 'Engineering']
+};*/
+const allStations: StationType[] = ['Navigation', 'Science', 'Weapons', 'Engineering']
 
 interface StationCanvasProps {
   station: StationType;

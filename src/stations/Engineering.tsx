@@ -222,7 +222,7 @@ export const Engineering: React.FC = () => {
 				key={panelName}
 				onClick={() => handlePanelClick(panelName)}
 				className="bg-gray-600 border-2 border-gray-400 rounded-lg p-8 cursor-pointer hover:bg-gray-500 transition-colors relative"
-				style={{ height: `${PANEL_SIZE}px`, width: `${PANEL_SIZE}px` }}
+				style={{ height: `${253.2}px`, width: `${253.2}px` }}
 			>
 				{/* Corner screws */}
 				<div className="absolute top-2 left-2 w-3 h-3 bg-gray-500 rounded-full border border-gray-700"></div>
@@ -242,7 +242,7 @@ export const Engineering: React.FC = () => {
 		//const panelState = engineeringState.panels[panelName];
 
 		return (
-			<div key={panelName} className="bg-gray-700 border-2 border-gray-500 rounded-lg p-4 relative">
+			<div key={panelName} className="bg-gray-700 border-2 border-gray-500 rounded-lg relative">
 				<div ref={containerRef} className="relative"
 					style={{ height: `${PANEL_SIZE}px`, width: `${PANEL_SIZE}px` }}>
 					<div className="flex justify-between items-center mb-4">
@@ -250,8 +250,8 @@ export const Engineering: React.FC = () => {
 					</div>
 					<canvas
 						ref={canvasRef}
-						width={PANEL_SIZE - 20}
-						height={PANEL_SIZE - 20}
+						width={PANEL_SIZE}
+						height={PANEL_SIZE}
 						className="absolute inset-0"
 						onMouseMove={(e) => handleCanvasMouseMove(e)}
 						onClick={(e) => handleCanvasClick(e)}
@@ -346,7 +346,7 @@ export const Engineering: React.FC = () => {
 			ctx.setLineDash([]);
 		}
 	}, [openPanel, engineeringState, dragState, hoveredWire]);
-	console.log("open Panel", openPanel)
+	
 	return (
 		<div className="bg-gray-800 p-6 h-full">
 			<h2 className="text-white text-xl font-mono mb-4">Engineering Station</h2>
