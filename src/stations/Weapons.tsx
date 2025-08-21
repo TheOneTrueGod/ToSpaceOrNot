@@ -4,11 +4,14 @@ import { RootState } from '../store';
 import {
   WEAPON_COLORS,
   MATERIAL_WEAKNESS,
+  WEAPON_POWER_REQUIREMENTS,
   setWeaponCooldown,
   popAsteroidLayer,
+  hasEnoughPower,
   WeaponType,
   Asteroid
 } from '../store/stations/weaponsStore';
+import { updateSystemValue } from '../store/shipStore';
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 400;
@@ -21,6 +24,7 @@ export const Weapons: React.FC = () => {
   const cooldownUntil = useSelector((s: RootState) => s.weapons.cooldownUntil);
   const gameClock = useSelector((s: RootState) => s.ship.gameClock);
   const nowSeconds = toTotalSeconds(gameClock);
+  const batteryPower = useSelector((s: RootState) => s.ship.batteryPower);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -43,11 +47,27 @@ export const Weapons: React.FC = () => {
     const isReady = cooldownUntil[weapon] <= nowSeconds;
     if (!isReady) return;
 
+    // Check if we have enough power
+    if (!hasEnoughPower(weapon, batteryPower.current)) {
+      return; // Not enough power to fire
+    }
+
     const target = getTargetAsteroid(weapon);
     if (!target) {
+      // Consume power even on miss
+      dispatch(updateSystemValue({ 
+        system: 'batteryPower', 
+        value: -WEAPON_POWER_REQUIREMENTS[weapon] 
+      }));
       dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 3, currentGameSeconds: nowSeconds }));
       return;
     }
+
+    // Consume power for successful shot
+    dispatch(updateSystemValue({ 
+      system: 'batteryPower', 
+      value: -WEAPON_POWER_REQUIREMENTS[weapon] 
+    }));
 
     // 200ms laser animation then apply effect and set 1s cooldown
     drawLaserOnce(weapon, target);
@@ -169,8 +189,9 @@ export const Weapons: React.FC = () => {
       <div className="mt-4 flex gap-4 justify-center">
         {buttons.map(btn => {
           const readyIn = Math.max(0, cooldownUntil[btn.label] - nowSeconds);
-          const disabled = readyIn > 0;
-          const cooldownProgress = disabled ? 1 - (readyIn / 3) : 1; // Assuming max cooldown is 3 seconds
+          const hasPower = hasEnoughPower(btn.label, batteryPower.current);
+          const disabled = readyIn > 0 || !hasPower;
+          const cooldownProgress = readyIn > 0 ? 1 - (readyIn / 3) : 1; // Assuming max cooldown is 3 seconds
           
           return (
             <button
@@ -181,10 +202,16 @@ export const Weapons: React.FC = () => {
               }`}
               style={{ backgroundColor: btn.color }}
               disabled={disabled}
-              title={disabled ? `Cooldown ${readyIn}s` : btn.label}
+              title={
+                disabled 
+                  ? readyIn > 0 
+                    ? `Cooldown ${readyIn}s` 
+                    : `Insufficient power (${WEAPON_POWER_REQUIREMENTS[btn.label]} required)`
+                  : btn.label
+              }
             >
               {/* Cooldown progress bar overlay */}
-              {disabled && (
+              {readyIn > 0 && (
                 <div
                   className="absolute inset-0 bg-white opacity-30 transition-transform duration-100 ease-linear"
                   style={{

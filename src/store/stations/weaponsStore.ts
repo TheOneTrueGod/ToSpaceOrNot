@@ -10,6 +10,12 @@ export const WEAPON_COLORS: Record<WeaponType, string> = {
   Railgun: '#10b981'
 };
 
+export const WEAPON_POWER_REQUIREMENTS: Record<WeaponType, number> = {
+  Phasers: 15,
+  Missiles: 25,
+  Railgun: 35
+};
+
 export const MATERIAL_WEAKNESS: Record<MaterialType, WeaponType> = {
   Crystal: 'Phasers',
   Alloy: 'Missiles',
@@ -131,6 +137,15 @@ export const weaponsSlice = createSlice({
 
 export const { setWeaponCooldown, spawnAsteroid, popAsteroidLayer, removeAsteroid } = weaponsSlice.actions;
 export default weaponsSlice.reducer;
+
+// Power management functions
+export const hasEnoughPower = (weapon: WeaponType, currentPower: number): boolean => {
+  return currentPower >= WEAPON_POWER_REQUIREMENTS[weapon];
+};
+
+export const getWeaponPowerCost = (weapon: WeaponType): number => {
+  return WEAPON_POWER_REQUIREMENTS[weapon];
+};
 
 // Placeholder weapon functionality checks
 // These will eventually reference other stores like stationStore or engineeringStore to determine functionality.
