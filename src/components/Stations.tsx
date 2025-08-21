@@ -4,6 +4,7 @@ import { RootState } from '../store';
 import { setActiveStation } from '../store/stationStore';
 import { StationType } from '../types';
 import { Engineering } from '../stations/Engineering';
+import { Weapons } from '../stations/Weapons';
 
 /*const playerStations: Record<Player, StationType[]> = {
   'Gobi': ['Engineering', 'Weapons'],
@@ -114,6 +115,8 @@ const StationContent: React.FC<{ station: StationType }> = ({ station }) => {
   switch (station) {
     case 'Engineering':
       return <Engineering />;
+    case 'Weapons':
+      return <Weapons />;
     default:
       return <DefaultStationCanvas station={station} />;
   }

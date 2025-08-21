@@ -1,14 +1,19 @@
 import { store } from '../store';
 import { advanceTime, addAlert, removeAlert } from '../store/shipStore';
 import { AlertSystem } from './AlertSystem';
-import { Alert } from '../types';
+import { spawnAsteroid } from '../store/stations/weaponsStore';
 
 export class DungeonMaster {
   private gameTimer: number | null = null;
-  private lastUpdateTime: number = 0;
   private alertsTriggered: Set<string> = new Set();
 
   start() {
+    // Spawn a few initial asteroids for testing the weapons system
+    const gameClock = store.getState().ship.gameClock;
+    for (let i = 0; i < 3; i++) {
+      store.dispatch(spawnAsteroid({ currentGameTime: gameClock }));
+    }
+
     this.gameTimer = setInterval(() => {
       this.gameLoop();
     }, 1000); // Every real second
@@ -102,7 +107,6 @@ export class DungeonMaster {
 
   reset() {
     this.alertsTriggered.clear();
-    this.lastUpdateTime = 0;
   }
 }
 

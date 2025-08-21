@@ -2,12 +2,14 @@ import { configureStore } from '@reduxjs/toolkit';
 import shipReducer from './shipStore';
 import gameReducer from './gameStore';
 import stationReducer from './stationStore';
+import weaponsReducer from './stations/weaponsStore';
 
 export const store = configureStore({
   reducer: {
     ship: shipReducer,
     game: gameReducer,
-    station: stationReducer
+    station: stationReducer,
+    weapons: weaponsReducer
   }
 });
 
