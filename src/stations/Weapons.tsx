@@ -75,12 +75,15 @@ export const Weapons: React.FC = () => {
     ctx.fill();
 
     // Concentric outlines for remaining layers
-    const layerGap = Math.max(3, Math.floor(baseRadius / Math.max(asteroid.initialLayerCount, 1)));
+    const layerGap = Math.max(6, Math.floor(baseRadius / Math.max(asteroid.initialLayerCount, 1))); // Increased from 3 to 6
+    const layerWidth = Math.max(4, Math.floor(layerGap * 0.6)); // Layer width is 60% of gap, minimum 4px
+    
     asteroid.layers.forEach((material, idx) => {
-      const r = baseRadius - idx * layerGap - 2;
+      const r = baseRadius - idx * layerGap - layerWidth / 2;
       if (r <= 4) return;
+      
       ctx.strokeStyle = WEAPON_COLORS[MATERIAL_WEAKNESS[material]];
-      ctx.lineWidth = 2;
+      ctx.lineWidth = layerWidth;
       ctx.beginPath();
       for (let i = 0; i < sides; i++) {
         const angle = (i / sides) * Math.PI * 2;
@@ -91,6 +94,26 @@ export const Weapons: React.FC = () => {
       ctx.closePath();
       ctx.stroke();
     });
+
+    // Draw countdown timer if less than 60 seconds until impact
+    const timeUntilImpact = toTotalSeconds(asteroid.impactAt) - nowSeconds;
+    if (timeUntilImpact < 60 && timeUntilImpact > 0) {
+      const text = Math.ceil(timeUntilImpact).toString();
+      const fontSize = Math.max(12, Math.floor(baseRadius * 0.4));
+      
+      ctx.font = `bold ${fontSize}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Draw white outline
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.strokeText(text, x, y);
+      
+      // Draw black text on top
+      ctx.fillStyle = '#000000';
+      ctx.fillText(text, x, y);
+    }
   };
 
   const drawLaserOnce = (weapon: WeaponType, target: Asteroid) => {

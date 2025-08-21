@@ -76,7 +76,7 @@ export const weaponsSlice = createSlice({
       }>
     ) => {
       const { currentGameTime, impactInSeconds = randomInt(20, 90), override } = action.payload;
-      const layerCount = override?.initialLayerCount ?? randomInt(3, 5);
+      const layerCount = override?.initialLayerCount ?? randomInt(1, 4);
       const layers: MaterialType[] = Array.from({ length: layerCount }, () => pickRandomMaterial());
       const baseSize = 40 + layerCount * 6; // influenced by layer count
       const size = override?.size ?? Math.min(80, baseSize + randomInt(0, 20));
@@ -107,7 +107,18 @@ export const weaponsSlice = createSlice({
     popAsteroidLayer: (state, action: PayloadAction<{ asteroidId: string }>) => {
       const asteroid = state.asteroids.find(a => a.id === action.payload.asteroidId);
       if (!asteroid) return;
+      
+      // Calculate the size reduction based on the destroyed layer
+      const layerGap = Math.max(6, Math.floor(asteroid.size / 2 / Math.max(asteroid.initialLayerCount, 1)));
+      const layerWidth = Math.max(4, Math.floor(layerGap * 0.6));
+      const sizeReduction = layerGap + layerWidth; // Total space taken by the destroyed layer
+      
+      // Reduce asteroid size
+      asteroid.size = Math.max(20, asteroid.size - sizeReduction);
+      
+      // Remove the outermost layer
       asteroid.layers.shift();
+      
       if (asteroid.layers.length === 0) {
         state.asteroids = state.asteroids.filter(a => a.id !== asteroid.id);
       }
