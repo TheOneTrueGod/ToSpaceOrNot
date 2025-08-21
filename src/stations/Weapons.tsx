@@ -77,7 +77,7 @@ export const Weapons: React.FC = () => {
     }, 200);
   };
 
-  const drawAsteroid = (ctx: CanvasRenderingContext2D, asteroid: Asteroid) => {
+  const drawAsteroid = useCallback((ctx: CanvasRenderingContext2D, asteroid: Asteroid) => {
     const { x, y } = asteroid.position;
     const sides = 8;
     const baseRadius = asteroid.size / 2;
@@ -134,7 +134,7 @@ export const Weapons: React.FC = () => {
       ctx.fillStyle = '#000000';
       ctx.fillText(text, x, y);
     }
-  };
+  }, [nowSeconds]);
 
   const drawLaserOnce = (weapon: WeaponType, target: Asteroid) => {
     const canvas = canvasRef.current;
@@ -165,7 +165,7 @@ export const Weapons: React.FC = () => {
 
     // Draw each asteroid
     asteroids.forEach(a => drawAsteroid(ctx, a));
-  }, [asteroids, gameClock]);
+  }, [asteroids, gameClock, drawAsteroid]);
 
   const buttons: { label: WeaponType; color: string }[] = useMemo(
     () => [

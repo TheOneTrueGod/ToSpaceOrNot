@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ShipState, Alert, Gauge } from '../types';
+import { Asteroid } from './stations/weaponsStore';
 
 const isGauge = (value: unknown): value is Gauge => {
   return typeof value === 'object' && value !== null && 'current' in value && 'max' in value;
@@ -26,6 +27,25 @@ const shipSlice = createSlice({
         state.gameClock.seconds = 0;
         state.gameClock.minutes += 1;
       }
+    },
+    gameTick: (state) => {
+      // Calculate power restoration for this tick
+      const powerRestored = calculatePowerRestoration();
+      state.batteryPower.current = Math.min(state.batteryPower.max, state.batteryPower.current + powerRestored);
+    },
+    handleAsteroidImpacts: (state, action: PayloadAction<{ asteroids: Asteroid[] }>) => {
+      const { asteroids } = action.payload;
+      const currentGameSeconds = state.gameClock.minutes * 60 + state.gameClock.seconds;
+      
+      // Check each asteroid for impact
+      asteroids.forEach((asteroid: Asteroid) => {
+        const asteroidImpactSeconds = asteroid.impactAt.minutes * 60 + asteroid.impactAt.seconds;
+        if (asteroidImpactSeconds <= currentGameSeconds) {
+          // Asteroid has impacted - calculate damage
+          const damage = 5 + asteroid.layers.length;
+          state.hullDamage.current = Math.min(state.hullDamage.max, state.hullDamage.current + damage);
+        }
+      });
     },
     addAlert: (state, action: PayloadAction<Alert>) => {
       state.alerts.push(action.payload);
@@ -55,5 +75,12 @@ const shipSlice = createSlice({
   }
 });
 
-export const { advanceTime, addAlert, removeAlert, updateSystemValue, resetShipState } = shipSlice.actions;
+// Helper function to calculate power restoration per second
+const calculatePowerRestoration = (): number => {
+  // For now, return a constant value of 1
+  // This can be expanded later to consider engineering systems, alerts, etc.
+  return 5;
+};
+
+export const { advanceTime, gameTick, handleAsteroidImpacts, addAlert, removeAlert, updateSystemValue, resetShipState } = shipSlice.actions;
 export default shipSlice.reducer;
