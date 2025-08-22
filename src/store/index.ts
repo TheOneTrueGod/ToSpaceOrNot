@@ -3,13 +3,15 @@ import shipReducer from './shipStore';
 import gameReducer from './gameStore';
 import stationReducer from './stationStore';
 import weaponsReducer from './stations/weaponsStore';
+import navigationReducer from './stations/navigationStore';
 
 export const store = configureStore({
   reducer: {
     ship: shipReducer,
     game: gameReducer,
     station: stationReducer,
-    weapons: weaponsReducer
+    weapons: weaponsReducer,
+    navigation: navigationReducer
   }
 });
 
