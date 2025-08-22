@@ -120,6 +120,24 @@ export const StatusMonitor: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Distance Progress Bar */}
+      <div className="mt-3 bg-gray-800 border border-gray-600 rounded p-3">
+        <div className="space-y-2">
+          <div className="flex justify-between items-center text-xs text-gray-400 font-mono">
+            <span>Distance Traveled</span>
+            <span>{shipState.distanceToDestination.max - shipState.distanceToDestination.current} / {shipState.distanceToDestination.max} km</span>
+          </div>
+          <div className="w-full bg-gray-700 rounded-full h-2.5 border border-gray-600">
+            <div 
+              className="bg-gradient-to-r from-blue-600 to-blue-400 h-2.5 rounded-full transition-all duration-500"
+              style={{ 
+                width: `${Math.max(0, Math.min(100, ((shipState.distanceToDestination.max - shipState.distanceToDestination.current) / shipState.distanceToDestination.max) * 100))}%` 
+              }}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -212,7 +212,7 @@ const FuelMixingGame: React.FC = () => {
           </div>
         </div>
         
-        <div className="flex items-end space-x-4">
+        <div className="flex space-x-4">
           <div>
             <h3 className="text-sm font-mono text-gray-400 mb-2 text-center">Active Mixture</h3>
             <TestTubeComponent
@@ -261,7 +261,7 @@ const FuelMixingGame: React.FC = () => {
               Next: {secondsUntilNextChange}s
             </p>
             <p className="text-xs font-mono text-gray-400">
-              Changes: {scienceState.fuelMixture.changeCount}
+              SyncId: {scienceState.fuelMixture.changeCount}
             </p>
           </div>
         </div>
