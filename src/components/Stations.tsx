@@ -6,6 +6,7 @@ import { StationType } from '../types';
 import { Engineering } from '../stations/Engineering';
 import { Weapons } from '../stations/Weapons';
 import { Navigation } from '../stations/Navigation';
+import { Science } from '../stations/Science';
 
 /*const playerStations: Record<Player, StationType[]> = {
   'Gobi': ['Engineering', 'Weapons'],
@@ -120,6 +121,8 @@ const StationContent: React.FC<{ station: StationType }> = ({ station }) => {
       return <Weapons />;
     case 'Navigation':
       return <Navigation />;
+    case 'Science':
+      return <Science />;
     default:
       return <DefaultStationCanvas station={station} />;
   }
