@@ -53,6 +53,11 @@ const shipSlice = createSlice({
     removeAlert: (state, action: PayloadAction<string>) => {
       state.alerts = state.alerts.filter(alert => alert.id !== action.payload);
     },
+    setAutomaticAlerts: (state, action: PayloadAction<Alert[]>) => {
+      // Remove existing automatic alerts and add new ones
+      state.alerts = state.alerts.filter(alert => alert.type !== 'automatic');
+      state.alerts.push(...action.payload);
+    },
     updateSystemValue: (state, action: PayloadAction<{
       system: keyof ShipState;
       value: number;
@@ -82,5 +87,5 @@ const calculatePowerRestoration = (): number => {
   return 5;
 };
 
-export const { advanceTime, gameTick, handleAsteroidImpacts, addAlert, removeAlert, updateSystemValue, resetShipState } = shipSlice.actions;
+export const { advanceTime, gameTick, handleAsteroidImpacts, addAlert, removeAlert, setAutomaticAlerts, updateSystemValue, resetShipState } = shipSlice.actions;
 export default shipSlice.reducer;

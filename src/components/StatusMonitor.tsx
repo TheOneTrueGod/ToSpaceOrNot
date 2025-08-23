@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
 import { RocketAnimation } from "./RocketAnimation";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, AlertTriangle, AlertCircle, XCircle } from "lucide-react";
 import { Asteroid } from "../store/stations/weaponsStore";
 
 // Constants for asteroid rendering
@@ -83,6 +83,19 @@ export const StatusMonitor: React.FC = () => {
     }
   };
 
+  const getSeverityIcon = (severity: string) => {
+    switch (severity) {
+      case "Critical":
+        return <XCircle size={16} className="text-red-400" />;
+      case "Danger":
+        return <AlertCircle size={16} className="text-orange-400" />;
+      case "Warning":
+        return <AlertTriangle size={16} className="text-yellow-400" />;
+      default:
+        return <AlertCircle size={16} className="text-gray-400" />;
+    }
+  };
+
   // Render asteroids on their own canvas
   useEffect(() => {
     const canvas = asteroidCanvasRef.current;
@@ -136,7 +149,7 @@ export const StatusMonitor: React.FC = () => {
         const angle = asteroidAnglesRef.current.get(asteroid.id) || 0;
 
         // Calculate position along the trajectory
-        const startX = canvas.width - 20;
+        const startX = canvas.width + 20;
         const startY = shipY + Math.tan(angle) * (startX - shipX);
 
         // Interpolate position
@@ -192,10 +205,9 @@ export const StatusMonitor: React.FC = () => {
               alert.severity
             )}`}
           >
-            <div className="font-semibold text-sm">{alert.name}</div>
-            <div className="text-xs opacity-80">
-              {alert.timestamp.minutes.toString().padStart(2, "0")}:
-              {alert.timestamp.seconds.toString().padStart(2, "0")}
+            <div className="flex items-center space-x-2">
+              {getSeverityIcon(alert.severity)}
+              <div className="font-semibold text-sm">{alert.name}</div>
             </div>
           </div>
         ))}

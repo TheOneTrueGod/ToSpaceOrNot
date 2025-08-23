@@ -3,17 +3,20 @@ import {
   advanceTime,
   addAlert,
   removeAlert,
+  setAutomaticAlerts,
   gameTick,
   handleAsteroidImpacts,
   updateSystemValue,
 } from "../store/shipStore";
 import { AlertSystem } from "./AlertSystem";
+import { AutomaticAlertSystem } from "./AutomaticAlertSystem";
 import { spawnAsteroid, removeAsteroid } from "../store/stations/weaponsStore";
 import { NavigationState } from "../store/stations/navigationStore";
 
 export class DungeonMaster {
   private gameTimer: number | null = null;
   private alertsTriggered: Set<string> = new Set();
+  private automaticAlertSystem = AutomaticAlertSystem.getInstance();
 
   private calculateShipSpeed(): number {
     const state = store.getState();
@@ -104,6 +107,15 @@ export class DungeonMaster {
     // Process game tick (power restoration, etc.)
     store.dispatch(gameTick());
 
+    // Generate automatic alerts based on current state
+    const currentState = store.getState();
+    const automaticAlerts = this.automaticAlertSystem.generateAlerts(
+      currentState.ship,
+      currentState.weapons,
+      currentState.navigation
+    );
+    store.dispatch(setAutomaticAlerts(automaticAlerts));
+
     // Update distance travelled based on speed
     const speed = this.calculateShipSpeed();
     if (speed > 0) {
@@ -170,7 +182,8 @@ export class DungeonMaster {
         "Minor hull stress detected in sector 7. Monitor structural integrity.",
         "Warning",
         "Gobi",
-        [{ system: "hullDamage" as const, changePerInterval: 1 }]
+        [{ system: "hullDamage" as const, changePerInterval: 1 }],
+        "manual"
       );
       store.dispatch(addAlert(warningAlert));
       this.alertsTriggered.add("warning-15");
@@ -183,7 +196,8 @@ export class DungeonMaster {
         "Critical failure in oxygen recycling system. Immediate attention required.",
         "Critical",
         "Ben",
-        [{ system: "oxygenLevels" as const, changePerInterval: -2 }]
+        [{ system: "oxygenLevels" as const, changePerInterval: -2 }],
+        "manual"
       );
       store.dispatch(addAlert(criticalAlert));
       this.alertsTriggered.add("critical-30");
@@ -196,7 +210,8 @@ export class DungeonMaster {
         "Dangerous fuel leak in main tank. Containment systems engaged.",
         "Danger",
         "Gobi",
-        [{ system: "fuelLevels" as const, changePerInterval: -1.5 }]
+        [{ system: "fuelLevels" as const, changePerInterval: -1.5 }],
+        "manual"
       );
       store.dispatch(addAlert(dangerAlert));
       this.alertsTriggered.add("danger-60");

@@ -8,7 +8,8 @@ export class AlertSystem {
     description: string,
     severity: 'Warning' | 'Danger' | 'Critical',
     owner: 'Gobi' | 'Ben',
-    systemEffects: SystemEffect[] = []
+    systemEffects: SystemEffect[] = [],
+    type: 'manual' | 'automatic' = 'manual'
   ): Alert {
     const currentTime = store.getState().ship.gameClock;
     
@@ -20,7 +21,8 @@ export class AlertSystem {
       severity,
       owner,
       systemEffects,
-      isActive: true
+      isActive: true,
+      type
     };
   }
 

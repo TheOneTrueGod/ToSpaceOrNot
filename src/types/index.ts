@@ -20,6 +20,7 @@ export interface Alert {
   owner: 'Gobi' | 'Ben';
   systemEffects: SystemEffect[];
   isActive: boolean;
+  type: 'manual' | 'automatic'; // Distinguishes DM-created vs status effect alerts
 }
 
 export interface SystemEffect {
