@@ -1,18 +1,23 @@
-import React, { useRef, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../store';
-import { setActiveStation } from '../store/stationStore';
-import { StationType } from '../types';
-import { Engineering } from '../stations/Engineering';
-import { Weapons } from '../stations/Weapons';
-import { Navigation } from '../stations/Navigation';
-import { Science } from '../stations/Science';
+import React, { useRef, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "../store";
+import { setActiveStation } from "../store/stationStore";
+import { StationType } from "../types";
+import { Engineering } from "../stations/Engineering";
+import { Weapons } from "../stations/Weapons";
+import { Navigation } from "../stations/Navigation";
+import { Science } from "../stations/Science";
 
 /*const playerStations: Record<Player, StationType[]> = {
   'Gobi': ['Engineering', 'Weapons'],
   'Ben': ['Navigation', 'Science'],
 };*/
-const allStations: StationType[] = ['Navigation', 'Science', 'Weapons', 'Engineering']
+const allStations: StationType[] = [
+  "Navigation",
+  "Science",
+  "Weapons",
+  "Engineering",
+];
 
 interface StationCanvasProps {
   station: StationType;
@@ -25,25 +30,25 @@ const DefaultStationCanvas: React.FC<StationCanvasProps> = ({ station }) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     // Clear canvas
-    ctx.fillStyle = '#1F2937';
+    ctx.fillStyle = "#1F2937";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Draw station name
-    ctx.fillStyle = '#E5E7EB';
-    ctx.font = '24px monospace';
-    ctx.textAlign = 'center';
+    ctx.fillStyle = "#E5E7EB";
+    ctx.font = "24px monospace";
+    ctx.textAlign = "center";
     ctx.fillText(station, canvas.width / 2, canvas.height / 2);
 
     // Draw decorative elements based on station type
-    ctx.strokeStyle = '#6B7280';
+    ctx.strokeStyle = "#6B7280";
     ctx.lineWidth = 2;
-    
+
     switch (station) {
-      case 'Engineering':
+      case "Engineering":
         // Draw gear-like pattern
         for (let i = 0; i < 8; i++) {
           const angle = (i * Math.PI) / 4;
@@ -57,13 +62,13 @@ const DefaultStationCanvas: React.FC<StationCanvasProps> = ({ station }) => {
           ctx.stroke();
         }
         break;
-        
-      case 'Navigation':
+
+      case "Navigation":
         // Draw compass-like pattern
         ctx.beginPath();
         ctx.arc(canvas.width / 2, canvas.height / 2, 60, 0, Math.PI * 2);
         ctx.stroke();
-        
+
         ctx.beginPath();
         ctx.moveTo(canvas.width / 2, canvas.height / 2 - 60);
         ctx.lineTo(canvas.width / 2, canvas.height / 2 + 60);
@@ -71,8 +76,8 @@ const DefaultStationCanvas: React.FC<StationCanvasProps> = ({ station }) => {
         ctx.lineTo(canvas.width / 2 + 60, canvas.height / 2);
         ctx.stroke();
         break;
-        
-      case 'Weapons':
+
+      case "Weapons":
         // Draw crosshair pattern
         ctx.beginPath();
         ctx.arc(canvas.width / 2, canvas.height / 2, 50, 0, Math.PI * 2);
@@ -83,8 +88,8 @@ const DefaultStationCanvas: React.FC<StationCanvasProps> = ({ station }) => {
         ctx.lineTo(canvas.width / 2, canvas.height / 2 + 80);
         ctx.stroke();
         break;
-        
-      case 'Science':
+
+      case "Science":
         // Draw molecular pattern
         for (let i = 0; i < 6; i++) {
           const angle = (i * Math.PI) / 3;
@@ -93,7 +98,7 @@ const DefaultStationCanvas: React.FC<StationCanvasProps> = ({ station }) => {
           ctx.beginPath();
           ctx.arc(x, y, 8, 0, Math.PI * 2);
           ctx.stroke();
-          
+
           ctx.beginPath();
           ctx.moveTo(canvas.width / 2, canvas.height / 2);
           ctx.lineTo(x, y);
@@ -115,13 +120,13 @@ const DefaultStationCanvas: React.FC<StationCanvasProps> = ({ station }) => {
 
 const StationContent: React.FC<{ station: StationType }> = ({ station }) => {
   switch (station) {
-    case 'Engineering':
+    case "Engineering":
       return <Engineering />;
-    case 'Weapons':
+    case "Weapons":
       return <Weapons />;
-    case 'Navigation':
+    case "Navigation":
       return <Navigation />;
-    case 'Science':
+    case "Science":
       return <Science />;
     default:
       return <DefaultStationCanvas station={station} />;
@@ -130,8 +135,12 @@ const StationContent: React.FC<{ station: StationType }> = ({ station }) => {
 
 export const Stations: React.FC = () => {
   const dispatch = useDispatch();
-  const currentPlayer = useSelector((state: RootState) => state.game.currentPlayer);
-  const activeStation = useSelector((state: RootState) => state.station.activeStation);
+  const currentPlayer = useSelector(
+    (state: RootState) => state.game.currentPlayer
+  );
+  const activeStation = useSelector(
+    (state: RootState) => state.station.activeStation
+  );
 
   if (!currentPlayer) return null;
 
@@ -151,11 +160,12 @@ export const Stations: React.FC = () => {
             onClick={() => handleStationChange(station)}
             className={`px-4 py-2 rounded-t-lg border-t border-l border-r transition-all ${
               activeStation === station
-                ? 'bg-gray-700 border-gray-500 text-blue-400'
-                : 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                ? "bg-gray-700 border-gray-500 text-blue-400"
+                : "bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700"
             }`}
             style={{
-              clipPath: 'polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%)'
+              clipPath:
+                "polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%)",
             }}
           >
             {station}
@@ -164,7 +174,7 @@ export const Stations: React.FC = () => {
       </div>
 
       {/* Station Content */}
-      <div className="flex justify-center items-center h-full">
+      <div className="flex justify-center">
         <StationContent station={activeStation} />
       </div>
     </div>

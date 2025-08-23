@@ -258,7 +258,7 @@ export class DungeonMaster {
   }
 
   private checkTimedAlerts(gameTime: number) {
-    // Warning alert after 15 seconds
+    /*// Warning alert after 15 seconds
     if (gameTime === 15 && !this.alertsTriggered.has("warning-15")) {
       const warningAlert = AlertSystem.createAlert(
         "Hull Stress Warning",
@@ -298,7 +298,7 @@ export class DungeonMaster {
       );
       store.dispatch(addAlert(dangerAlert));
       this.alertsTriggered.add("danger-60");
-    }
+    }*/
   }
 
   private applyAllAlertEffects() {
