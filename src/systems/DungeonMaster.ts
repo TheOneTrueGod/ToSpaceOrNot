@@ -12,7 +12,13 @@ import { AlertSystem } from "./AlertSystem";
 import { AutomaticAlertSystem } from "./AutomaticAlertSystem";
 import { spawnAsteroid, removeAsteroid } from "../store/stations/weaponsStore";
 import { NavigationState } from "../store/stations/navigationStore";
-import { getThrustPenaltyMultiplier, getFuelPenaltyMultiplier, getPowerPenaltyMultiplier, getWeaponsPenaltyMultiplier } from "../store/stations/engineeringStore";
+import {
+  getThrustPenaltyMultiplier,
+  getFuelPenaltyMultiplier,
+  getPowerPenaltyMultiplier,
+  getWeaponsPenaltyMultiplier,
+} from "../store/stations/engineeringStore";
+import { isPulseFrequencyCorrect } from "../store/stations/scienceStore";
 
 export class DungeonMaster {
   private gameTimer: number | null = null;
@@ -91,20 +97,23 @@ export class DungeonMaster {
     const state = store.getState();
     const engineeringState = state.engineering;
     const currentAlerts = state.ship.alerts;
-    
+
     if (!engineeringState) return;
 
     const malfunctionSystems = [
-      { name: "Weapons", penalty: getWeaponsPenaltyMultiplier(engineeringState) },
+      {
+        name: "Weapons",
+        penalty: getWeaponsPenaltyMultiplier(engineeringState),
+      },
       { name: "Fuel", penalty: getFuelPenaltyMultiplier(engineeringState) },
       { name: "Power", penalty: getPowerPenaltyMultiplier(engineeringState) },
-      { name: "Thrust", penalty: getThrustPenaltyMultiplier(engineeringState) }
+      { name: "Thrust", penalty: getThrustPenaltyMultiplier(engineeringState) },
     ];
 
-    malfunctionSystems.forEach(system => {
+    malfunctionSystems.forEach((system) => {
       const alertName = `${system.name} Malfunction`;
-      const hasAlert = currentAlerts.some(alert => 
-        alert.name === alertName && alert.isActive
+      const hasAlert = currentAlerts.some(
+        (alert) => alert.name === alertName && alert.isActive
       );
 
       if (system.penalty >= 2.0 && !hasAlert) {
@@ -120,8 +129,8 @@ export class DungeonMaster {
         store.dispatch(addAlert(malfunctionAlert));
       } else if (system.penalty < 2.0 && hasAlert) {
         // Remove malfunction alert
-        const alertToRemove = currentAlerts.find(alert => 
-          alert.name === alertName && alert.isActive
+        const alertToRemove = currentAlerts.find(
+          (alert) => alert.name === alertName && alert.isActive
         );
         if (alertToRemove) {
           store.dispatch(removeAlert(alertToRemove.id));
@@ -155,15 +164,27 @@ export class DungeonMaster {
     // Advance game time
     store.dispatch(advanceTime());
 
+    // Calculate engineering and science parameters for game tick
+    const currentState = store.getState();
+    const engineeringState = currentState.engineering;
+    const scienceState = currentState.science;
+
+    const engineeringPenalty = engineeringState
+      ? getPowerPenaltyMultiplier(engineeringState)
+      : 1;
+    const scienceCorrect = scienceState
+      ? isPulseFrequencyCorrect(scienceState)
+      : true;
+
     // Process game tick (power restoration, etc.)
-    store.dispatch(gameTick());
+    store.dispatch(gameTick({ engineeringPenalty, scienceCorrect }));
 
     // Generate automatic alerts based on current state
-    const currentState = store.getState();
+    const alertsState = store.getState();
     const automaticAlerts = this.automaticAlertSystem.generateAlerts(
-      currentState.ship,
-      currentState.weapons,
-      currentState.navigation
+      alertsState.ship,
+      alertsState.weapons,
+      alertsState.navigation
     );
     store.dispatch(setAutomaticAlerts(automaticAlerts));
 
@@ -181,14 +202,13 @@ export class DungeonMaster {
 
     // Decrease fuel each game update, factoring in engineering penalties
     const baselineFuelConsumption = -1;
-    const engineeringState = store.getState().engineering;
     let fuelConsumption = baselineFuelConsumption;
-    
+
     if (engineeringState) {
       const fuelPenalty = getFuelPenaltyMultiplier(engineeringState);
       fuelConsumption *= fuelPenalty;
     }
-    
+
     store.dispatch(
       updateSystemValue({
         system: "fuelLevels",

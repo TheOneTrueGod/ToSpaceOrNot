@@ -2,7 +2,13 @@ import React, { useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
 import { RocketAnimation } from "./RocketAnimation";
-import { ChevronUp, ChevronDown, AlertTriangle, AlertCircle, XCircle } from "lucide-react";
+import {
+  ChevronUp,
+  ChevronDown,
+  AlertTriangle,
+  AlertCircle,
+  XCircle,
+} from "lucide-react";
 import { Asteroid } from "../store/stations/weaponsStore";
 
 // Constants for asteroid rendering
@@ -196,22 +202,6 @@ export const StatusMonitor: React.FC = () => {
 
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 h-full relative">
-      {/* Alert Overlay */}
-      <div className="absolute top-4 left-4 space-y-2 z-10 max-w-64">
-        {shipState.alerts.slice(0, 4).map((alert) => (
-          <div
-            key={alert.id}
-            className={`p-2 rounded border backdrop-blur-sm ${getSeverityColor(
-              alert.severity
-            )}`}
-          >
-            <div className="flex items-center space-x-2">
-              {getSeverityIcon(alert.severity)}
-              <div className="font-semibold text-sm">{alert.name}</div>
-            </div>
-          </div>
-        ))}
-      </div>
 
       {/* Rocket Animation with overlaid asteroids */}
       <div className="relative flex justify-center mb-4 mt-8">
@@ -295,9 +285,11 @@ export const StatusMonitor: React.FC = () => {
           <div className="flex justify-between items-center text-xs text-gray-400 font-mono">
             <span>Distance Traveled</span>
             <span>
-              {shipState.distanceToDestination.max -
-                shipState.distanceToDestination.current}{" "}
-              / {shipState.distanceToDestination.max} km
+              {Math.floor(
+                shipState.distanceToDestination.max -
+                  shipState.distanceToDestination.current
+              )}{" "}
+              / {Math.floor(shipState.distanceToDestination.max)} km
             </span>
           </div>
           <div className="w-full bg-gray-700 rounded-full h-2.5 border border-gray-600">
@@ -319,6 +311,25 @@ export const StatusMonitor: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Alerts Section */}
+      {shipState.alerts.length > 0 && (
+        <div className="mt-3 bg-gray-800 border border-gray-600 rounded p-3">
+          <div className="grid grid-cols-2 gap-2">
+            {shipState.alerts.slice(0, 8).map((alert) => (
+              <div
+                key={alert.id}
+                className={`p-2 rounded border ${getSeverityColor(alert.severity)}`}
+              >
+                <div className="flex items-center space-x-2">
+                  {getSeverityIcon(alert.severity)}
+                  <div className="font-semibold text-xs">{alert.name}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
