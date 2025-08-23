@@ -277,20 +277,20 @@ export const Science: React.FC = () => {
       
       <div className="space-y-8">
         <div className="bg-gray-700 p-6 rounded-lg">
+          <h3 className="text-lg font-mono text-teal-400 mb-4">Fuel Mixture Control</h3>
+          <FuelMixingGame />
+          <p className="text-xs text-gray-400 text-center mt-4">
+            Click storage tubes to transfer fuel. Match the target mixture to add fuel to the ship.
+          </p>
+        </div>
+        
+        <div className="bg-gray-700 p-6 rounded-lg">
           <h3 className="text-lg font-mono text-teal-400 mb-4">Pulse Frequency Control</h3>
           <div className="flex justify-center">
             <PulseButton />
           </div>
           <p className="text-xs text-gray-400 text-center mt-4">
             Click the button to match the reactor pulse frequency
-          </p>
-        </div>
-        
-        <div className="bg-gray-700 p-6 rounded-lg">
-          <h3 className="text-lg font-mono text-teal-400 mb-4">Fuel Mixture Control</h3>
-          <FuelMixingGame />
-          <p className="text-xs text-gray-400 text-center mt-4">
-            Click storage tubes to transfer fuel. Match the target mixture to add fuel to the ship.
           </p>
         </div>
       </div>

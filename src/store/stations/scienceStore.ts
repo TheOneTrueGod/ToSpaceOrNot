@@ -42,7 +42,7 @@ export interface ScienceState {
 const FUEL_TYPES: FuelType[] = ['Hydrogen', 'Xenon', 'Plutonium', 'Helium'];
 const CORRECT_PULSE_FREQUENCY = 1000;
 const PULSE_FREQUENCY_TOLERANCE = 100;
-export const FUEL_ADDED_PER_CORRECT_MIXTURE = 50;
+export const FUEL_ADDED_PER_CORRECT_MIXTURE = 100;
 export const REFUEL_COOLDOWN_SECONDS = 20;
 export const DUMP_COOLDOWN_SECONDS = 5;
 
