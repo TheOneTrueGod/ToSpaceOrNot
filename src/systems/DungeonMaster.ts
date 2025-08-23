@@ -7,6 +7,8 @@ import {
   gameTick,
   handleAsteroidImpacts,
   updateSystemValue,
+  startBreak,
+  BREAK_POINTS,
 } from "../store/shipStore";
 import { AlertSystem } from "./AlertSystem";
 import { AutomaticAlertSystem } from "./AutomaticAlertSystem";
@@ -188,34 +190,50 @@ export class DungeonMaster {
     );
     store.dispatch(setAutomaticAlerts(automaticAlerts));
 
-    // Update distance travelled based on speed
-    const speed = this.calculateShipSpeed();
-    if (speed > 0) {
+    // Update distance travelled based on speed (only if not on break)
+    const currentShipState = store.getState().ship;
+    if (!currentShipState.isOnBreak) {
+      const speed = this.calculateShipSpeed();
+      if (speed > 0) {
+        const distanceTraveled = currentShipState.distanceToDestination.max - currentShipState.distanceToDestination.current;
+        
+        store.dispatch(
+          updateSystemValue({
+            system: "distanceToDestination",
+            value: -speed, // Negative to decrease distance to destination
+            isCurrentValue: true,
+          })
+        );
+
+        // Check if we've reached a break point
+        const newDistanceTraveled = distanceTraveled + speed;
+        for (const breakPoint of BREAK_POINTS) {
+          if (distanceTraveled < breakPoint && newDistanceTraveled >= breakPoint) {
+            store.dispatch(startBreak());
+            break;
+          }
+        }
+      }
+    }
+
+    // Decrease fuel each game update, factoring in engineering penalties (only if not on break)
+    if (!currentShipState.isOnBreak) {
+      const baselineFuelConsumption = -1;
+      let fuelConsumption = baselineFuelConsumption;
+
+      if (engineeringState) {
+        const fuelPenalty = getFuelPenaltyMultiplier(engineeringState);
+        fuelConsumption *= fuelPenalty;
+      }
+
       store.dispatch(
         updateSystemValue({
-          system: "distanceToDestination",
-          value: -speed, // Negative to decrease distance to destination
+          system: "fuelLevels",
+          value: Math.round(fuelConsumption),
           isCurrentValue: true,
         })
       );
     }
-
-    // Decrease fuel each game update, factoring in engineering penalties
-    const baselineFuelConsumption = -1;
-    let fuelConsumption = baselineFuelConsumption;
-
-    if (engineeringState) {
-      const fuelPenalty = getFuelPenaltyMultiplier(engineeringState);
-      fuelConsumption *= fuelPenalty;
-    }
-
-    store.dispatch(
-      updateSystemValue({
-        system: "fuelLevels",
-        value: Math.round(fuelConsumption),
-        isCurrentValue: true,
-      })
-    );
 
     // Check for asteroid impacts
     const weaponsState = store.getState().weapons;

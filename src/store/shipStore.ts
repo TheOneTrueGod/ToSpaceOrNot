@@ -11,6 +11,9 @@ const isGauge = (value: unknown): value is Gauge => {
   );
 };
 
+// Break point constants - ship pauses at these distances traveled
+export const BREAK_POINTS = [250, 500, 750] as const;
+
 const initialState: ShipState = {
   distanceToDestination: { current: 1000, max: 1000 },
   hullDamage: { current: 0, max: 100 },
@@ -20,6 +23,7 @@ const initialState: ShipState = {
   batteryPower: { current: 100, max: 100 },
   gameClock: { minutes: 0, seconds: 0 },
   alerts: [],
+  isOnBreak: false,
 };
 
 const shipSlice = createSlice({
@@ -136,6 +140,12 @@ const shipSlice = createSlice({
       }
     },
     resetShipState: () => initialState,
+    startBreak: (state) => {
+      state.isOnBreak = true;
+    },
+    resumeJourney: (state) => {
+      state.isOnBreak = false;
+    },
   },
 });
 
@@ -166,5 +176,7 @@ export const {
   setAutomaticAlerts,
   updateSystemValue,
   resetShipState,
+  startBreak,
+  resumeJourney,
 } = shipSlice.actions;
 export default shipSlice.reducer;

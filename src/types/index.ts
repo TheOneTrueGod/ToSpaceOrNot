@@ -9,6 +9,7 @@ export interface ShipState {
   batteryPower: Gauge;
   gameClock: { minutes: number; seconds: number };
   alerts: Alert[];
+  isOnBreak: boolean;
 }
 
 export interface Alert {
