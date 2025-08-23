@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
-import { updateEngineeringState } from '../store/stationStore';
+import { updatePanelConnections } from '../store/stations/engineeringStore';
+import { DEBUG_MODE, PANEL_SYSTEM_MAPPING, getPenaltyMultiplier, countIncorrectConnections } from '../store/stations/engineeringStore';
 
 interface WireConnection {
 	from: { type: 'input' | 'node' | 'output'; index: number };
@@ -22,11 +23,25 @@ interface EngineeringState {
 const PANEL_SIZE = 250
 const COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b']; // red, blue, green, yellow
 
+// Helper function to get penalty info for a panel
+const getPanelPenaltyInfo = (panelName: string, engineeringState: any) => {
+	const currentPanel = engineeringState.panels[panelName];
+	const correctPanel = engineeringState.correctState[panelName];
+	
+	if (!currentPanel || !correctPanel) return { multiplier: 1, incorrectCount: 0 };
+	
+	const incorrectCount = countIncorrectConnections(
+		currentPanel.connections,
+		correctPanel.connections
+	);
+	const multiplier = getPenaltyMultiplier(panelName, engineeringState);
+	
+	return { multiplier, incorrectCount };
+};
+
 export const Engineering: React.FC = () => {
 	const dispatch = useDispatch();
-	const engineeringState = useSelector((state: RootState) =>
-		state.station.stationStates.Engineering as EngineeringState
-	);
+	const engineeringState = useSelector((state: RootState) => state.engineering);
 
 	const [openPanel, setOpenPanel] = useState<string | null>(null);
 	const [dragState, setDragState] = useState<{
@@ -111,13 +126,9 @@ export const Engineering: React.FC = () => {
 			const currentPanel = engineeringState.panels[openPanel];
 			const updatedConnections = [...currentPanel.connections, newConnection];
 
-			dispatch(updateEngineeringState({
-				newState: {
-					...engineeringState.panels,
-					[openPanel]: {
-						connections: updatedConnections
-					}
-				}
+			dispatch(updatePanelConnections({
+				panelName: openPanel,
+				connections: updatedConnections
 			}));
 		}
 	};
@@ -128,13 +139,9 @@ export const Engineering: React.FC = () => {
 			const updatedConnections = currentPanel.connections.filter((_, index) => index !== wireIndex);
 			setHoveredWire(null)
 
-			dispatch(updateEngineeringState({
-				newState: {
-					...engineeringState.panels,
-					[openPanel]: {
-						connections: updatedConnections
-					}
-				}
+			dispatch(updatePanelConnections({
+				panelName: openPanel,
+				connections: updatedConnections
 			}));
 		}
 	};
@@ -217,6 +224,8 @@ export const Engineering: React.FC = () => {
 	};
 
 	const renderClosedPanel = (panelName: string) => {
+		const penaltyInfo = getPanelPenaltyInfo(panelName, engineeringState);
+		
 		return (
 			<div
 				key={panelName}
@@ -232,22 +241,56 @@ export const Engineering: React.FC = () => {
 
 				{/* Panel name */}
 				<div className="flex items-center justify-center h-full">
-					<span className="text-gray-800 font-mono text-2xl font-bold">{panelName}</span>
+					<div className="text-center">
+						<span className="text-gray-800 font-mono text-2xl font-bold block">{panelName}</span>
+						{DEBUG_MODE && PANEL_SYSTEM_MAPPING[panelName] && (
+							<span className="text-gray-700 font-mono text-sm block mt-2">
+								({PANEL_SYSTEM_MAPPING[panelName]})
+							</span>
+						)}
+						{DEBUG_MODE && (
+							<div className="mt-4">
+								<div className="text-gray-800 font-mono text-xs">
+									Penalty: {penaltyInfo.multiplier}x
+								</div>
+								<div className="text-gray-800 font-mono text-xs">
+									Errors: {penaltyInfo.incorrectCount}
+								</div>
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
 		)
 	};
 
 	const renderOpenPanel = (panelName: string) => {
-		//const panelState = engineeringState.panels[panelName];
+		const penaltyInfo = getPanelPenaltyInfo(panelName, engineeringState);
 
 		return (
 			<div key={panelName} className="bg-gray-700 border-2 border-gray-500 rounded-lg relative">
 				<div ref={containerRef} className="relative"
 					style={{ height: `${PANEL_SIZE}px`, width: `${PANEL_SIZE}px` }}>
 					<div className="flex justify-between items-center mb-4">
-						<h3 className="text-white font-mono text-lg mx-auto">{panelName}</h3>
+						<div className="text-center mx-auto">
+							<h3 className="text-white font-mono text-lg">{panelName}</h3>
+							{DEBUG_MODE && PANEL_SYSTEM_MAPPING[panelName] && (
+								<span className="text-gray-300 font-mono text-sm block">
+									({PANEL_SYSTEM_MAPPING[panelName]})
+								</span>
+							)}
+						</div>
 					</div>
+					
+					{/* Debug penalty display in center */}
+					{DEBUG_MODE && (
+						<div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-50 p-2 rounded pointer-events-none">
+							<div className="text-white font-mono text-xs text-center">
+								<div>Penalty: {penaltyInfo.multiplier}x</div>
+								<div>Errors: {penaltyInfo.incorrectCount}</div>
+							</div>
+						</div>
+					)}
 					<canvas
 						ref={canvasRef}
 						width={PANEL_SIZE}

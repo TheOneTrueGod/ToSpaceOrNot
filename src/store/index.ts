@@ -5,6 +5,7 @@ import stationReducer from './stationStore';
 import weaponsReducer from './stations/weaponsStore';
 import navigationReducer from './stations/navigationStore';
 import scienceReducer from './stations/scienceStore';
+import engineeringReducer from './stations/engineeringStore';
 
 export const store = configureStore({
   reducer: {
@@ -13,7 +14,8 @@ export const store = configureStore({
     station: stationReducer,
     weapons: weaponsReducer,
     navigation: navigationReducer,
-    science: scienceReducer
+    science: scienceReducer,
+    engineering: engineeringReducer
   }
 });
 

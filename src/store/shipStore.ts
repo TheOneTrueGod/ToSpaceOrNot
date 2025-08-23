@@ -1,6 +1,9 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ShipState, Alert, Gauge } from '../types';
 import { Asteroid } from './stations/weaponsStore';
+import { store } from './index';
+import { getPowerPenaltyMultiplier } from './stations/engineeringStore';
+import { isPulseFrequencyCorrect } from './stations/scienceStore';
 
 const isGauge = (value: unknown): value is Gauge => {
   return typeof value === 'object' && value !== null && 'current' in value && 'max' in value;
@@ -32,6 +35,33 @@ const shipSlice = createSlice({
       // Calculate power restoration for this tick
       const powerRestored = calculatePowerRestoration();
       state.batteryPower.current = Math.min(state.batteryPower.max, state.batteryPower.current + powerRestored);
+      
+      // Check if power generation is below 50% of expected and add alert if needed
+      const baselineRecovery = 5;
+      const expectedPower = baselineRecovery; // Expected power without penalties
+      if (powerRestored < expectedPower * 0.5) {
+        // Add low power alert if it doesn't already exist
+        const hasLowPowerAlert = state.alerts.some(alert => 
+          alert.name === 'Low Power Generation' && alert.isActive
+        );
+        if (!hasLowPowerAlert) {
+          const lowPowerAlert: Alert = {
+            id: `low-power-${Date.now()}`,
+            name: 'Low Power Generation',
+            timestamp: state.gameClock,
+            description: 'Power generation is significantly below expected levels. Check engineering systems.',
+            severity: 'Warning',
+            owner: 'Gobi',
+            systemEffects: [],
+            isActive: true,
+            type: 'automatic'
+          };
+          state.alerts.push(lowPowerAlert);
+        }
+      } else {
+        // Remove low power alert if power is restored
+        state.alerts = state.alerts.filter(alert => alert.name !== 'Low Power Generation');
+      }
     },
     handleAsteroidImpacts: (state, action: PayloadAction<{ asteroids: Asteroid[] }>) => {
       const { asteroids } = action.payload;
@@ -82,9 +112,32 @@ const shipSlice = createSlice({
 
 // Helper function to calculate power restoration per second
 const calculatePowerRestoration = (): number => {
-  // For now, return a constant value of 1
-  // This can be expanded later to consider engineering systems, alerts, etc.
-  return 5;
+  const baselineRecovery = 5;
+  
+  try {
+    const currentState = store.getState();
+    const engineeringState = currentState.engineering;
+    const scienceState = currentState.science;
+    
+    // Start with baseline recovery
+    let powerRestoration = baselineRecovery;
+    
+    // Apply science pulse frequency factor
+    if (scienceState && !isPulseFrequencyCorrect(scienceState)) {
+      powerRestoration *= 0.7; // Reduce by 30% if pulse frequency is incorrect
+    }
+    
+    // Apply engineering penalty
+    if (engineeringState) {
+      const penalty = getPowerPenaltyMultiplier(engineeringState);
+      powerRestoration /= penalty;
+    }
+    
+    return Math.max(0, Math.round(powerRestoration));
+  } catch (error) {
+    // Fallback to baseline if there are any issues accessing state
+    return baselineRecovery;
+  }
 };
 
 export const { advanceTime, gameTick, handleAsteroidImpacts, addAlert, removeAlert, setAutomaticAlerts, updateSystemValue, resetShipState } = shipSlice.actions;

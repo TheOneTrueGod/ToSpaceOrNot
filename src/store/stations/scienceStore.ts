@@ -1,4 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { store } from '../index';
+import { getFuelPenaltyMultiplier } from './engineeringStore';
 
 export type FuelType = 'Hydrogen' | 'Xenon' | 'Plutonium' | 'Helium';
 
@@ -43,6 +45,24 @@ const PULSE_FREQUENCY_TOLERANCE = 100;
 export const FUEL_ADDED_PER_CORRECT_MIXTURE = 50;
 export const REFUEL_COOLDOWN_SECONDS = 20;
 export const DUMP_COOLDOWN_SECONDS = 5;
+
+// Helper function to calculate actual cooldown with engineering penalty
+const calculateCooldownWithPenalty = (baseCooldown: number): number => {
+  try {
+    const currentState = store.getState();
+    const engineeringState = currentState.engineering;
+    
+    if (engineeringState) {
+      const fuelPenalty = getFuelPenaltyMultiplier(engineeringState);
+      return Math.round(baseCooldown * fuelPenalty);
+    }
+    
+    return baseCooldown;
+  } catch (error) {
+    // Fallback to base cooldown if there are any issues accessing state
+    return baseCooldown;
+  }
+};
 
 class SeededRandom {
   private seed: number;
@@ -151,7 +171,8 @@ export const scienceSlice = createSlice({
       
       // Remove the top layer (last element in the array)
       state.fuelMixture.activeTube.layers.pop();
-      state.fuelMixture.dumpCooldownUntil = currentGameSeconds + DUMP_COOLDOWN_SECONDS;
+      const cooldownDuration = calculateCooldownWithPenalty(DUMP_COOLDOWN_SECONDS);
+      state.fuelMixture.dumpCooldownUntil = currentGameSeconds + cooldownDuration;
     },
     
     checkAndProcessCorrectMixture: (state, action: PayloadAction<{ currentPlayer: 'Gobi' | 'Ben', currentGameSeconds: number }>) => {
@@ -181,7 +202,8 @@ export const scienceSlice = createSlice({
         { layers: [] },
         { layers: [] }
       ];
-      state.fuelMixture.refuelCooldownUntil = currentGameSeconds + REFUEL_COOLDOWN_SECONDS;
+      const cooldownDuration = calculateCooldownWithPenalty(REFUEL_COOLDOWN_SECONDS);
+      state.fuelMixture.refuelCooldownUntil = currentGameSeconds + cooldownDuration;
     },
     
     completeRefuel: (state) => {

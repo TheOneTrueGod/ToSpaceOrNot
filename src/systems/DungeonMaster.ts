@@ -12,6 +12,7 @@ import { AlertSystem } from "./AlertSystem";
 import { AutomaticAlertSystem } from "./AutomaticAlertSystem";
 import { spawnAsteroid, removeAsteroid } from "../store/stations/weaponsStore";
 import { NavigationState } from "../store/stations/navigationStore";
+import { getThrustPenaltyMultiplier, getFuelPenaltyMultiplier, getPowerPenaltyMultiplier, getWeaponsPenaltyMultiplier } from "../store/stations/engineeringStore";
 
 export class DungeonMaster {
   private gameTimer: number | null = null;
@@ -22,6 +23,7 @@ export class DungeonMaster {
     const state = store.getState();
     const shipState = state.ship;
     const navigationState = state.navigation;
+    const engineeringState = state.engineering;
 
     // If no fuel, ship can't move
     if (shipState.fuelLevels.current <= 0) {
@@ -45,8 +47,14 @@ export class DungeonMaster {
       speed -= 1; // Fuel below 1/4
     }
 
+    // Apply engineering thrust penalty
+    if (engineeringState) {
+      const thrustPenalty = getThrustPenaltyMultiplier(engineeringState);
+      speed /= thrustPenalty;
+    }
+
     // Ensure speed doesn't go negative
-    return Math.max(0, speed);
+    return Math.max(0, Math.round(speed * 10) / 10); // Round to 1 decimal place
   }
 
   private countNavigationErrors(
@@ -77,6 +85,49 @@ export class DungeonMaster {
     }
 
     return errors;
+  }
+
+  private checkEngineeringMalfunctions() {
+    const state = store.getState();
+    const engineeringState = state.engineering;
+    const currentAlerts = state.ship.alerts;
+    
+    if (!engineeringState) return;
+
+    const malfunctionSystems = [
+      { name: "Weapons", penalty: getWeaponsPenaltyMultiplier(engineeringState) },
+      { name: "Fuel", penalty: getFuelPenaltyMultiplier(engineeringState) },
+      { name: "Power", penalty: getPowerPenaltyMultiplier(engineeringState) },
+      { name: "Thrust", penalty: getThrustPenaltyMultiplier(engineeringState) }
+    ];
+
+    malfunctionSystems.forEach(system => {
+      const alertName = `${system.name} Malfunction`;
+      const hasAlert = currentAlerts.some(alert => 
+        alert.name === alertName && alert.isActive
+      );
+
+      if (system.penalty >= 2.0 && !hasAlert) {
+        // Add malfunction alert
+        const malfunctionAlert = AlertSystem.createAlert(
+          alertName,
+          `${system.name} system experiencing significant malfunctions due to engineering panel damage.`,
+          "Danger",
+          "Gobi", // Default owner, could be made configurable
+          [],
+          "automatic"
+        );
+        store.dispatch(addAlert(malfunctionAlert));
+      } else if (system.penalty < 2.0 && hasAlert) {
+        // Remove malfunction alert
+        const alertToRemove = currentAlerts.find(alert => 
+          alert.name === alertName && alert.isActive
+        );
+        if (alertToRemove) {
+          store.dispatch(removeAlert(alertToRemove.id));
+        }
+      }
+    });
   }
 
   start() {
@@ -128,11 +179,20 @@ export class DungeonMaster {
       );
     }
 
-    // Decrease fuel by 1 each game update
+    // Decrease fuel each game update, factoring in engineering penalties
+    const baselineFuelConsumption = -1;
+    const engineeringState = store.getState().engineering;
+    let fuelConsumption = baselineFuelConsumption;
+    
+    if (engineeringState) {
+      const fuelPenalty = getFuelPenaltyMultiplier(engineeringState);
+      fuelConsumption *= fuelPenalty;
+    }
+    
     store.dispatch(
       updateSystemValue({
         system: "fuelLevels",
-        value: -1,
+        value: Math.round(fuelConsumption),
         isCurrentValue: true,
       })
     );
@@ -172,6 +232,9 @@ export class DungeonMaster {
 
     // Check for alert resolutions
     this.checkAlertResolutions();
+
+    // Check for engineering malfunctions
+    this.checkEngineeringMalfunctions();
   }
 
   private checkTimedAlerts(gameTime: number) {

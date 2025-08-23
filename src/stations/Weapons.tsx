@@ -12,6 +12,7 @@ import {
   Asteroid
 } from '../store/stations/weaponsStore';
 import { updateSystemValue } from '../store/shipStore';
+import { getWeaponsPenaltyMultiplier } from '../store/stations/engineeringStore';
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 400;
@@ -25,6 +26,9 @@ export const Weapons: React.FC = () => {
   const gameClock = useSelector((s: RootState) => s.ship.gameClock);
   const nowSeconds = toTotalSeconds(gameClock);
   const batteryPower = useSelector((s: RootState) => s.ship.batteryPower);
+  const engineeringState = useSelector((s: RootState) => s.engineering);
+  
+  const weaponsPenalty = getWeaponsPenaltyMultiplier(engineeringState);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -47,8 +51,12 @@ export const Weapons: React.FC = () => {
     const isReady = cooldownUntil[weapon] <= nowSeconds;
     if (!isReady) return;
 
-    // Check if we have enough power
-    if (!hasEnoughPower(weapon, batteryPower.current)) {
+    // Calculate actual power requirement with engineering penalty
+    const basePowerCost = WEAPON_POWER_REQUIREMENTS[weapon];
+    const actualPowerCost = Math.round(basePowerCost * weaponsPenalty);
+
+    // Check if we have enough power (using actual power cost)
+    if (batteryPower.current < actualPowerCost) {
       return; // Not enough power to fire
     }
 
@@ -57,23 +65,23 @@ export const Weapons: React.FC = () => {
       // Consume power even on miss
       dispatch(updateSystemValue({ 
         system: 'batteryPower', 
-        value: -WEAPON_POWER_REQUIREMENTS[weapon] 
+        value: -actualPowerCost 
       }));
-      dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 3, currentGameSeconds: nowSeconds }));
+      dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 3, currentGameSeconds: nowSeconds, engineeringPenalty: weaponsPenalty }));
       return;
     }
 
     // Consume power for successful shot
     dispatch(updateSystemValue({ 
       system: 'batteryPower', 
-      value: -WEAPON_POWER_REQUIREMENTS[weapon] 
+      value: -actualPowerCost 
     }));
 
     // 200ms laser animation then apply effect and set 1s cooldown
     drawLaserOnce(weapon, target);
     window.setTimeout(() => {
       dispatch(popAsteroidLayer({ asteroidId: target.id }));
-      dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 1, currentGameSeconds: nowSeconds + 1 }));
+      dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 1, currentGameSeconds: nowSeconds + 1, engineeringPenalty: weaponsPenalty }));
     }, 200);
   };
 
@@ -189,7 +197,9 @@ export const Weapons: React.FC = () => {
       <div className="mt-4 flex gap-4 justify-center">
         {buttons.map(btn => {
           const readyIn = Math.max(0, cooldownUntil[btn.label] - nowSeconds);
-          const hasPower = hasEnoughPower(btn.label, batteryPower.current);
+          const basePowerCost = WEAPON_POWER_REQUIREMENTS[btn.label];
+          const actualPowerCost = Math.round(basePowerCost * weaponsPenalty);
+          const hasPower = batteryPower.current >= actualPowerCost;
           const disabled = readyIn > 0 || !hasPower;
           const cooldownProgress = readyIn > 0 ? 1 - (readyIn / 3) : 1; // Assuming max cooldown is 3 seconds
           
@@ -206,8 +216,8 @@ export const Weapons: React.FC = () => {
                 disabled 
                   ? readyIn > 0 
                     ? `Cooldown ${readyIn}s` 
-                    : `Insufficient power (${WEAPON_POWER_REQUIREMENTS[btn.label]} required)`
-                  : btn.label
+                    : `Insufficient power (${actualPowerCost} required)`
+                  : `${btn.label} (${actualPowerCost} power)`
               }
             >
               {/* Cooldown progress bar overlay */}
