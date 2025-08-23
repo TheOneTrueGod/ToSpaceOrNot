@@ -13,7 +13,7 @@ import {
 import { AlertSystem } from "./AlertSystem";
 import { AutomaticAlertSystem } from "./AutomaticAlertSystem";
 import { spawnAsteroid, removeAsteroid } from "../store/stations/weaponsStore";
-import { NavigationState } from "../store/stations/navigationStore";
+import { NavigationState, getCurrentNavigationStage, updateNavigationStage } from "../store/stations/navigationStore";
 import {
   getThrustPenaltyMultiplier,
   getFuelPenaltyMultiplier,
@@ -40,8 +40,9 @@ export class DungeonMaster {
 
     let speed = 2; // Base speed
 
-    // Check navigation alignment
-    const navErrors = this.countNavigationErrors(navigationState);
+    // Check navigation alignment - need current player to determine correct values
+    const currentPlayer = state.game?.currentPlayer || 'Gobi';
+    const navErrors = this.countNavigationErrors(navigationState, currentPlayer);
     if (navErrors === 1) {
       speed -= 1; // One navigation number incorrect
     } else if (navErrors >= 2) {
@@ -66,27 +67,33 @@ export class DungeonMaster {
   }
 
   private countNavigationErrors(
-    navigationState: NavigationState | undefined
+    navigationState: NavigationState | undefined,
+    currentPlayer: string
   ): number {
     if (!navigationState) return 0;
 
     let errors = 0;
     const tolerance = 0.1; // Small tolerance for floating point comparison
+    
+    // Get the correct values for the current player
+    const correctValues = currentPlayer === 'Gobi' 
+      ? navigationState.correctValues.gobi 
+      : navigationState.correctValues.ben;
 
     if (
-      Math.abs(navigationState.current.pitch - navigationState.correct.pitch) >
+      Math.abs(navigationState.current.pitch - correctValues.pitch) >
       tolerance
     ) {
       errors++;
     }
     if (
-      Math.abs(navigationState.current.yaw - navigationState.correct.yaw) >
+      Math.abs(navigationState.current.yaw - correctValues.yaw) >
       tolerance
     ) {
       errors++;
     }
     if (
-      Math.abs(navigationState.current.roll - navigationState.correct.roll) >
+      Math.abs(navigationState.current.roll - correctValues.roll) >
       tolerance
     ) {
       errors++;
@@ -212,6 +219,13 @@ export class DungeonMaster {
             store.dispatch(startBreak());
             break;
           }
+        }
+        
+        // Update navigation stage based on distance traveled
+        const currentStage = getCurrentNavigationStage(distanceTraveled);
+        const newStage = getCurrentNavigationStage(newDistanceTraveled);
+        if (currentStage !== newStage) {
+          store.dispatch(updateNavigationStage({ stage: newStage }));
         }
       }
     }

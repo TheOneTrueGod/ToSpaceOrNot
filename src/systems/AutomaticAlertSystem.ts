@@ -200,14 +200,35 @@ export class AutomaticAlertSystem {
     const alerts: Alert[] = [];
     const tolerance = 0.5; // Tolerance for considering values "correct"
     
+    // Check navigation alignment against both players' correct values
+    // If current values don't match either player's correct values, there's an issue
     const issues = [];
-    if (Math.abs(navigationState.current.pitch - navigationState.correct.pitch) > tolerance) {
+    
+    const currentPitch = navigationState.current.pitch;
+    const currentYaw = navigationState.current.yaw;
+    const currentRoll = navigationState.current.roll;
+    
+    const gobiCorrect = navigationState.correctValues.gobi;
+    const benCorrect = navigationState.correctValues.ben;
+    
+    // Check if pitch matches either player's correct value
+    const pitchMatchesGobi = Math.abs(currentPitch - gobiCorrect.pitch) <= tolerance;
+    const pitchMatchesBen = Math.abs(currentPitch - benCorrect.pitch) <= tolerance;
+    if (!pitchMatchesGobi && !pitchMatchesBen) {
       issues.push('pitch');
     }
-    if (Math.abs(navigationState.current.yaw - navigationState.correct.yaw) > tolerance) {
+    
+    // Check if yaw matches either player's correct value
+    const yawMatchesGobi = Math.abs(currentYaw - gobiCorrect.yaw) <= tolerance;
+    const yawMatchesBen = Math.abs(currentYaw - benCorrect.yaw) <= tolerance;
+    if (!yawMatchesGobi && !yawMatchesBen) {
       issues.push('yaw');
     }
-    if (Math.abs(navigationState.current.roll - navigationState.correct.roll) > tolerance) {
+    
+    // Check if roll matches either player's correct value
+    const rollMatchesGobi = Math.abs(currentRoll - gobiCorrect.roll) <= tolerance;
+    const rollMatchesBen = Math.abs(currentRoll - benCorrect.roll) <= tolerance;
+    if (!rollMatchesGobi && !rollMatchesBen) {
       issues.push('roll');
     }
 

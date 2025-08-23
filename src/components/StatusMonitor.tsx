@@ -222,6 +222,15 @@ export const StatusMonitor: React.FC = () => {
           size="small"
           showTrail={true}
         />
+        
+        {/* Break overlay */}
+        {shipState.isOnBreak && (
+          <div className="absolute top-0 left-0 bg-green-500 bg-opacity-20 border-2 border-green-400 rounded px-3 py-1">
+            <span className="text-green-400 font-mono text-sm font-semibold">
+              Taking a break
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Status Bar */}
