@@ -1,42 +1,62 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
-import { RocketAnimation } from './RocketAnimation';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import React, { useRef, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { RootState } from "../store";
+import { RocketAnimation } from "./RocketAnimation";
+import { ChevronUp, ChevronDown } from "lucide-react";
+import { Asteroid } from "../store/stations/weaponsStore";
+
+// Constants for asteroid rendering
+const ASTEROID_MIN_SIZE = 10;
+const ASTEROID_MAX_SIZE = 20;
 
 export const StatusMonitor: React.FC = () => {
   const shipState = useSelector((state: RootState) => state.ship);
+  const weaponsState = useSelector((state: RootState) => state.weapons);
+  const rocketCanvasRef = useRef<HTMLCanvasElement>(null);
+  const asteroidCanvasRef = useRef<HTMLCanvasElement>(null);
+  const asteroidAnglesRef = useRef<Map<string, number>>(new Map());
 
   const renderProgressBar = (
     label: string,
     current: number,
     max: number,
-    color: string = 'blue',
-    showChanges: { direction: 'increasing' | 'decreasing' | 'stable'; intensity: number } = { direction: 'stable', intensity: 0 }
+    color: string = "blue",
+    showChanges: {
+      direction: "increasing" | "decreasing" | "stable";
+      intensity: number;
+    } = { direction: "stable", intensity: 0 }
   ) => {
     const percentage = Math.max(0, Math.min(100, (current / max) * 100));
-    
+
     const getColorClasses = (color: string) => {
       switch (color) {
-        case 'red': return 'bg-red-500';
-        case 'green': return 'bg-green-500';
-        case 'yellow': return 'bg-yellow-500';
-        default: return 'bg-blue-500';
+        case "red":
+          return "bg-red-500";
+        case "green":
+          return "bg-green-500";
+        case "yellow":
+          return "bg-yellow-500";
+        default:
+          return "bg-blue-500";
       }
     };
 
-    const chevrons = Array.from({ length: showChanges.intensity }, (_, i) => (
-      showChanges.direction === 'increasing' ? 
-        <ChevronUp key={i} size={8} className="text-green-400" /> :
+    const chevrons = Array.from({ length: showChanges.intensity }, (_, i) =>
+      showChanges.direction === "increasing" ? (
+        <ChevronUp key={i} size={8} className="text-green-400" />
+      ) : (
         <ChevronDown key={i} size={8} className="text-red-400" />
-    ));
+      )
+    );
 
     return (
       <div className="flex flex-col items-center space-y-1">
         <div className="text-xs text-gray-300 font-mono">{label}</div>
         <div className="relative w-6 h-20 bg-gray-700 rounded border border-gray-600">
-          <div 
-            className={`absolute bottom-0 w-full rounded transition-all duration-300 ${getColorClasses(color)}`}
+          <div
+            className={`absolute bottom-0 w-full rounded transition-all duration-300 ${getColorClasses(
+              color
+            )}`}
             style={{ height: `${percentage}%` }}
           />
           <div className="absolute inset-0 flex flex-col justify-center items-center">
@@ -52,34 +72,154 @@ export const StatusMonitor: React.FC = () => {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'Critical': return 'text-red-400 bg-red-900/20 border-red-500';
-      case 'Danger': return 'text-orange-400 bg-orange-900/20 border-orange-500';
-      case 'Warning': return 'text-yellow-400 bg-yellow-900/20 border-yellow-500';
-      default: return 'text-gray-400 bg-gray-900/20 border-gray-500';
+      case "Critical":
+        return "text-red-400 bg-red-900/20 border-red-500";
+      case "Danger":
+        return "text-orange-400 bg-orange-900/20 border-orange-500";
+      case "Warning":
+        return "text-yellow-400 bg-yellow-900/20 border-yellow-500";
+      default:
+        return "text-gray-400 bg-gray-900/20 border-gray-500";
     }
   };
+
+  // Render asteroids on their own canvas
+  useEffect(() => {
+    const canvas = asteroidCanvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Assign random angles to new asteroids
+    weaponsState.asteroids.forEach((asteroid) => {
+      if (!asteroidAnglesRef.current.has(asteroid.id)) {
+        // Random angle between -30 and 30 degrees
+        asteroidAnglesRef.current.set(
+          asteroid.id,
+          ((Math.random() - 0.5) * Math.PI) / 5
+        );
+      }
+    });
+
+    // Clean up angles for removed asteroids
+    const currentIds = new Set(weaponsState.asteroids.map((a) => a.id));
+    Array.from(asteroidAnglesRef.current.keys()).forEach((id) => {
+      if (!currentIds.has(id)) {
+        asteroidAnglesRef.current.delete(id);
+      }
+    });
+
+    const drawAsteroids = () => {
+      // Clear the entire asteroid canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const nowSeconds =
+        shipState.gameClock.minutes * 60 + shipState.gameClock.seconds;
+      const shipX = 50; // Ship position (moved left by 50px from center)
+      const shipY = canvas.height / 2;
+
+      weaponsState.asteroids.forEach((asteroid) => {
+        const impactSeconds =
+          asteroid.impactAt.minutes * 60 + asteroid.impactAt.seconds;
+        const createdSeconds =
+          asteroid.createdAt.minutes * 60 + asteroid.createdAt.seconds;
+        const totalTime = impactSeconds - createdSeconds;
+        const timeRemaining = impactSeconds - nowSeconds;
+
+        if (timeRemaining <= 0) return; // Don't draw if already impacted
+
+        // Calculate progress (0 = just spawned at right edge, 1 = impact at ship)
+        const progress = 1 - timeRemaining / totalTime;
+
+        // Get the angle for this asteroid
+        const angle = asteroidAnglesRef.current.get(asteroid.id) || 0;
+
+        // Calculate position along the trajectory
+        const startX = canvas.width - 20;
+        const startY = shipY + Math.tan(angle) * (startX - shipX);
+
+        // Interpolate position
+        const x = startX - (startX - shipX) * progress;
+        const y = startY - (startY - shipY) * progress;
+
+        // Scale asteroid size
+        const scaledSize =
+          ASTEROID_MIN_SIZE +
+          ((ASTEROID_MAX_SIZE - ASTEROID_MIN_SIZE) * (asteroid.size - 40)) / 40;
+        const currentSize = scaledSize * (1 - progress * 0.3); // Shrink slightly as it approaches
+
+        // Draw asteroid as a simple octagon without material colors
+        const sides = 8;
+        ctx.fillStyle = "#9ca3af"; // Gray color
+        ctx.strokeStyle = "#4b5563"; // Darker gray for outline
+        ctx.lineWidth = 1;
+
+        ctx.beginPath();
+        for (let i = 0; i < sides; i++) {
+          const sideAngle = (i / sides) * Math.PI * 2;
+          const px = x + (Math.cos(sideAngle) * currentSize) / 2;
+          const py = y + (Math.sin(sideAngle) * currentSize) / 2;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw impact countdown if less than 10 seconds
+        if (timeRemaining < 10 && timeRemaining > 0) {
+          ctx.fillStyle = "#ef4444";
+          ctx.font = "bold 10px monospace";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(Math.ceil(timeRemaining).toString(), x, y);
+        }
+      });
+    };
+
+    drawAsteroids();
+  }, [weaponsState.asteroids, shipState.gameClock]);
 
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 h-full relative">
       {/* Alert Overlay */}
       <div className="absolute top-4 left-4 space-y-2 z-10 max-w-64">
         {shipState.alerts.slice(0, 4).map((alert) => (
-          <div 
+          <div
             key={alert.id}
-            className={`p-2 rounded border backdrop-blur-sm ${getSeverityColor(alert.severity)}`}
+            className={`p-2 rounded border backdrop-blur-sm ${getSeverityColor(
+              alert.severity
+            )}`}
           >
             <div className="font-semibold text-sm">{alert.name}</div>
             <div className="text-xs opacity-80">
-              {alert.timestamp.minutes.toString().padStart(2, '0')}:
-              {alert.timestamp.seconds.toString().padStart(2, '0')}
+              {alert.timestamp.minutes.toString().padStart(2, "0")}:
+              {alert.timestamp.seconds.toString().padStart(2, "0")}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Rocket Animation */}
-      <div className="flex justify-center mb-4 mt-8">
-        <RocketAnimation size="small" showTrail={true} />
+      {/* Rocket Animation with overlaid asteroids */}
+      <div className="relative flex justify-center mb-4 mt-8">
+        <canvas
+          ref={rocketCanvasRef}
+          width={300}
+          height={100}
+          className="mx-auto"
+        />
+        <canvas
+          ref={asteroidCanvasRef}
+          width={300}
+          height={100}
+          className="absolute inset-0 mx-auto pointer-events-none"
+        />
+        <RocketAnimation
+          canvasRef={rocketCanvasRef}
+          size="small"
+          showTrail={true}
+        />
       </div>
 
       {/* Status Bar */}
@@ -87,35 +227,51 @@ export const StatusMonitor: React.FC = () => {
         <div className="flex items-center justify-between">
           {/* Game Clock */}
           <div className="text-green-400 font-mono text-lg">
-            {shipState.gameClock.minutes.toString().padStart(2, '0')}:
-            {shipState.gameClock.seconds.toString().padStart(2, '0')}
+            {shipState.gameClock.minutes.toString().padStart(2, "0")}:
+            {shipState.gameClock.seconds.toString().padStart(2, "0")}
           </div>
 
           {/* Progress Bars */}
           <div className="flex space-x-4">
             {renderProgressBar(
-              'HULL', 
-              shipState.hullDamage.max - shipState.hullDamage.current, 
-              shipState.hullDamage.max, 
-              shipState.hullDamage.current > 50 ? 'red' : shipState.hullDamage.current > 25 ? 'yellow' : 'green'
+              "HULL",
+              shipState.hullDamage.max - shipState.hullDamage.current,
+              shipState.hullDamage.max,
+              shipState.hullDamage.current > 50
+                ? "red"
+                : shipState.hullDamage.current > 25
+                ? "yellow"
+                : "green"
             )}
             {renderProgressBar(
-              'O2', 
-              shipState.oxygenLevels.current, 
-              shipState.oxygenLevels.max, 
-              shipState.oxygenLevels.current < 30 ? 'red' : shipState.oxygenLevels.current < 60 ? 'yellow' : 'green'
+              "O2",
+              shipState.oxygenLevels.current,
+              shipState.oxygenLevels.max,
+              shipState.oxygenLevels.current < 30
+                ? "red"
+                : shipState.oxygenLevels.current < 60
+                ? "yellow"
+                : "green"
             )}
             {renderProgressBar(
-              'FUEL', 
-              shipState.fuelLevels.current, 
-              shipState.fuelLevels.max, 
-              shipState.fuelLevels.current < 25 ? 'red' : shipState.fuelLevels.current < 50 ? 'yellow' : 'blue'
+              "FUEL",
+              shipState.fuelLevels.current,
+              shipState.fuelLevels.max,
+              shipState.fuelLevels.current < 25
+                ? "red"
+                : shipState.fuelLevels.current < 50
+                ? "yellow"
+                : "blue"
             )}
             {renderProgressBar(
-              'PWR', 
-              shipState.batteryPower.current, 
-              shipState.batteryPower.max, 
-              shipState.batteryPower.current < 20 ? 'red' : shipState.batteryPower.current < 40 ? 'yellow' : 'blue'
+              "PWR",
+              shipState.batteryPower.current,
+              shipState.batteryPower.max,
+              shipState.batteryPower.current < 20
+                ? "red"
+                : shipState.batteryPower.current < 40
+                ? "yellow"
+                : "blue"
             )}
           </div>
         </div>
@@ -126,13 +282,26 @@ export const StatusMonitor: React.FC = () => {
         <div className="space-y-2">
           <div className="flex justify-between items-center text-xs text-gray-400 font-mono">
             <span>Distance Traveled</span>
-            <span>{shipState.distanceToDestination.max - shipState.distanceToDestination.current} / {shipState.distanceToDestination.max} km</span>
+            <span>
+              {shipState.distanceToDestination.max -
+                shipState.distanceToDestination.current}{" "}
+              / {shipState.distanceToDestination.max} km
+            </span>
           </div>
           <div className="w-full bg-gray-700 rounded-full h-2.5 border border-gray-600">
-            <div 
+            <div
               className="bg-gradient-to-r from-blue-600 to-blue-400 h-2.5 rounded-full transition-all duration-500"
-              style={{ 
-                width: `${Math.max(0, Math.min(100, ((shipState.distanceToDestination.max - shipState.distanceToDestination.current) / shipState.distanceToDestination.max) * 100))}%` 
+              style={{
+                width: `${Math.max(
+                  0,
+                  Math.min(
+                    100,
+                    ((shipState.distanceToDestination.max -
+                      shipState.distanceToDestination.current) /
+                      shipState.distanceToDestination.max) *
+                      100
+                  )
+                )}%`,
               }}
             />
           </div>

@@ -1,19 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 
 interface RocketAnimationProps {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
   size?: 'small' | 'large';
   showTrail?: boolean;
 }
 
 export const RocketAnimation: React.FC<RocketAnimationProps> = ({ 
+  canvasRef,
   size = 'large', 
   showTrail = true 
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const particles = useRef<Array<{ x: number; y: number; vx: number; vy: number; life: number; color: string }>>([]);
-
-  const dimensions = size === 'large' ? { width: 400, height: 200 } : { width: 300, height: 100 };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -31,7 +30,9 @@ export const RocketAnimation: React.FC<RocketAnimationProps> = ({
       const tilt = Math.sin(time) * 0.35; // 20 degrees in radians
       
       ctx.save();
-      ctx.translate(canvas.width / 2, canvas.height / 2);
+      // Move ship left by 50 pixels in small size mode (StatusMonitor)
+      const xPosition = size === 'small' ? 50 : canvas.width / 2;
+      ctx.translate(xPosition, canvas.height / 2);
       ctx.rotate(tilt);
       
       // Draw rocket body
@@ -102,12 +103,5 @@ export const RocketAnimation: React.FC<RocketAnimationProps> = ({
     };
   }, [size, showTrail]);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      width={dimensions.width}
-      height={dimensions.height}
-      className="mx-auto"
-    />
-  );
+  return null;
 };

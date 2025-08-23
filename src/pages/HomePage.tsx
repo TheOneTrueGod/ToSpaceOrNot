@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { setCurrentPlayer, setCurrentPage } from '../store/gameStore';
 import { RocketAnimation } from '../components/RocketAnimation';
@@ -6,6 +6,7 @@ import { Player } from '../types';
 
 export const HomePage: React.FC = () => {
   const dispatch = useDispatch();
+  const rocketCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const handlePlayerSelect = (player: Player) => {
     dispatch(setCurrentPlayer(player));
@@ -21,7 +22,13 @@ export const HomePage: React.FC = () => {
 
       {/* Rocket Animation */}
       <div className="mb-12">
-        <RocketAnimation size="large" showTrail={true} />
+        <canvas
+          ref={rocketCanvasRef}
+          width={400}
+          height={200}
+          className="mx-auto"
+        />
+        <RocketAnimation canvasRef={rocketCanvasRef} size="large" showTrail={true} />
       </div>
 
       {/* Player Selection */}
