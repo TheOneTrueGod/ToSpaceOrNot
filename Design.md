@@ -97,3 +97,31 @@ Finally, each alert will also have a "resolution" check, where it checks the sta
    For now, use placeholders for these alerts
 
 Every 10 GameMinutes, each active alert's "apply effects" method should be called so they can update the game state
+
+8. Player Synchronization Systems
+   
+   The game implements a cooperative multiplayer design where both players need to work together, but each player sees different information to encourage communication and coordination. This is achieved through cross-player information display in key systems.
+
+8.a. Fuel Mixture Synchronization
+   The fuel mixture system in the Science station operates on a synchronized but asymmetric information model:
+   - Both players generate the same sequence of fuel mixtures using synchronized seeded random number generators
+   - Each player can only see the correct fuel mixture for the OTHER player's ship
+   - The mixtures change every 20 GameSeconds, synchronized across both players via the same seed progression
+   - Players must communicate their partner's correct mixture to successfully refuel their own ship
+   - This creates a natural cooperation requirement where players must share information to progress
+
+8.b. Navigation Value Synchronization
+   The navigation system implements stage-based progression with cross-player visibility:
+   - Navigation has 4 distinct stages based on distance traveled: 0-250km, 250-500km, 500-750km, and 750-1000km
+   - Each stage has different correct navigation values (pitch, yaw, roll) for both Gobi and Ben
+   - Players can see their partner's correct navigation values displayed below their own input controls
+   - When players reach journey break points (at 250km, 500km, and 750km), the navigation values automatically update to the next stage
+   - Each player starts with their own correct navigation values when they select their character
+   - Debug mode (development only) shows the current player's correct values for testing purposes
+
+8.c. Synchronization Implementation Details
+   - Both systems use deterministic algorithms to ensure both players see consistent information
+   - The fuel mixture system uses seeded random generators with shared seeds to maintain synchronization
+   - The navigation system uses hardcoded stage-based values that transition at predetermined distance milestones
+   - Break points ([250, 500, 750] km traveled) serve as synchronization checkpoints where both players must coordinate to resume their journey
+   - All synchronization is handled client-side since there is no network communication between players
