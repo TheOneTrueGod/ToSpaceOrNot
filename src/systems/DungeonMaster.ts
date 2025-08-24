@@ -58,7 +58,7 @@ export class DungeonMaster {
 
     // Apply engineering thrust penalty
     if (engineeringState) {
-      const thrustPenalty = getThrustPenaltyMultiplier(engineeringState);
+      const thrustPenalty = getThrustPenaltyMultiplier(engineeringState, currentPlayer);
       speed /= thrustPenalty;
     }
 
@@ -109,14 +109,15 @@ export class DungeonMaster {
 
     if (!engineeringState) return;
 
+    const currentPlayer = state.game?.currentPlayer || 'Gobi';
     const malfunctionSystems = [
       {
         name: "Weapons",
-        penalty: getWeaponsPenaltyMultiplier(engineeringState),
+        penalty: getWeaponsPenaltyMultiplier(engineeringState, currentPlayer),
       },
-      { name: "Fuel", penalty: getFuelPenaltyMultiplier(engineeringState) },
-      { name: "Power", penalty: getPowerPenaltyMultiplier(engineeringState) },
-      { name: "Thrust", penalty: getThrustPenaltyMultiplier(engineeringState) },
+      { name: "Fuel", penalty: getFuelPenaltyMultiplier(engineeringState, currentPlayer) },
+      { name: "Power", penalty: getPowerPenaltyMultiplier(engineeringState, currentPlayer) },
+      { name: "Thrust", penalty: getThrustPenaltyMultiplier(engineeringState, currentPlayer) },
     ];
 
     malfunctionSystems.forEach((system) => {
@@ -178,8 +179,9 @@ export class DungeonMaster {
     const engineeringState = currentState.engineering;
     const scienceState = currentState.science;
 
+    const currentPlayer = currentState.game?.currentPlayer || 'Gobi';
     const engineeringPenalty = engineeringState
-      ? getPowerPenaltyMultiplier(engineeringState)
+      ? getPowerPenaltyMultiplier(engineeringState, currentPlayer)
       : 1;
     const scienceCorrect = scienceState
       ? isPulseFrequencyCorrect(scienceState)
@@ -236,7 +238,8 @@ export class DungeonMaster {
       let fuelConsumption = baselineFuelConsumption;
 
       if (engineeringState) {
-        const fuelPenalty = getFuelPenaltyMultiplier(engineeringState);
+        const currentPlayer = currentShipState.gameClock ? store.getState().game?.currentPlayer || 'Gobi' : 'Gobi';
+        const fuelPenalty = getFuelPenaltyMultiplier(engineeringState, currentPlayer);
         fuelConsumption *= fuelPenalty;
       }
 

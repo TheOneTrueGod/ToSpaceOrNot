@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
-import { updatePanelConnections } from '../store/stations/engineeringStore';
+import { updatePanelConnections, toggleSchematicView } from '../store/stations/engineeringStore';
 import { DEBUG_MODE, PANEL_SYSTEM_MAPPING, getPenaltyMultiplier, countIncorrectConnections } from '../store/stations/engineeringStore';
 
 interface WireConnection {
@@ -13,20 +13,14 @@ interface PanelState {
 	connections: WireConnection[];
 }
 
-interface EngineeringState {
-	panels: {
-		[panelName: string]: PanelState;
-	};
-	panelOrder: string[];
-}
 
 const PANEL_SIZE = 250
 const COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b']; // red, blue, green, yellow
 
 // Helper function to get penalty info for a panel
-const getPanelPenaltyInfo = (panelName: string, engineeringState: any) => {
+const getPanelPenaltyInfo = (panelName: string, engineeringState: { panels: { [key: string]: PanelState }, correctState: { Gobi: { [key: string]: PanelState }, Ben: { [key: string]: PanelState } } }, currentPlayer: 'Gobi' | 'Ben') => {
 	const currentPanel = engineeringState.panels[panelName];
-	const correctPanel = engineeringState.correctState[panelName];
+	const correctPanel = engineeringState.correctState[currentPlayer][panelName];
 	
 	if (!currentPanel || !correctPanel) return { multiplier: 1, incorrectCount: 0 };
 	
@@ -34,7 +28,7 @@ const getPanelPenaltyInfo = (panelName: string, engineeringState: any) => {
 		currentPanel.connections,
 		correctPanel.connections
 	);
-	const multiplier = getPenaltyMultiplier(panelName, engineeringState);
+	const multiplier = getPenaltyMultiplier(panelName, engineeringState, currentPlayer);
 	
 	return { multiplier, incorrectCount };
 };
@@ -42,6 +36,10 @@ const getPanelPenaltyInfo = (panelName: string, engineeringState: any) => {
 export const Engineering: React.FC = () => {
 	const dispatch = useDispatch();
 	const engineeringState = useSelector((state: RootState) => state.engineering);
+	const currentPlayer = useSelector((state: RootState) => state.game.currentPlayer);
+	
+	// Get the other player's name
+	const otherPlayer = currentPlayer === 'Gobi' ? 'Ben' : 'Gobi';
 
 	const [openPanel, setOpenPanel] = useState<string | null>(null);
 	const [dragState, setDragState] = useState<{
@@ -96,9 +94,14 @@ export const Engineering: React.FC = () => {
 		setOpenPanel(openPanel === panelName ? null : panelName);
 	};
 
+	const handleSchematicToggle = () => {
+		dispatch(toggleSchematicView());
+		setOpenPanel(null); // Close any open panel when switching modes
+	};
+
 	const handleNodeMouseDown = (type: 'input' | 'node' | 'output', index: number, e: React.MouseEvent) => {
 		e.preventDefault();
-		if (!containerRef.current) return;
+		if (!containerRef.current || engineeringState.isViewingSchematic) return;
 
 		const rect = containerRef.current.getBoundingClientRect();
 		setDragState({
@@ -112,7 +115,7 @@ export const Engineering: React.FC = () => {
 	};
 
 	const handleNodeMouseUp = (type: 'input' | 'node' | 'output', index: number) => {
-		if (dragState.isDragging && dragState.from && openPanel) {
+		if (dragState.isDragging && dragState.from && openPanel && !engineeringState.isViewingSchematic) {
 			const newConnection: WireConnection = {
 				from: dragState.from,
 				to: { type, index }
@@ -134,7 +137,7 @@ export const Engineering: React.FC = () => {
 	};
 
 	const handleWireClick = (wireIndex: number) => {
-		if (openPanel) {
+		if (openPanel && !engineeringState.isViewingSchematic) {
 			const currentPanel = engineeringState.panels[openPanel];
 			const updatedConnections = currentPanel.connections.filter((_, index) => index !== wireIndex);
 			setHoveredWire(null)
@@ -199,7 +202,7 @@ export const Engineering: React.FC = () => {
 	};
 
 	const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-		if (!openPanel) return;
+		if (!openPanel || engineeringState.isViewingSchematic) return;
 		const { x, y } = getMousePosInCanvas(e);
 		const panelState = engineeringState.panels[openPanel];
 		const threshold = 8;
@@ -224,13 +227,15 @@ export const Engineering: React.FC = () => {
 	};
 
 	const renderClosedPanel = (panelName: string) => {
-		const penaltyInfo = getPanelPenaltyInfo(panelName, engineeringState);
+		if (!currentPlayer) return null;
+		const penaltyInfo = getPanelPenaltyInfo(panelName, engineeringState, currentPlayer);
+		const isSchematic = engineeringState.isViewingSchematic;
 		
 		return (
 			<div
 				key={panelName}
 				onClick={() => handlePanelClick(panelName)}
-				className="bg-gray-600 border-2 border-gray-400 rounded-lg p-8 cursor-pointer hover:bg-gray-500 transition-colors relative"
+				className={`${isSchematic ? 'bg-yellow-100' : 'bg-gray-600'} border-2 border-gray-400 rounded-lg p-8 cursor-pointer hover:${isSchematic ? 'bg-yellow-200' : 'bg-gray-500'} transition-colors relative`}
 				style={{ height: `${253.2}px`, width: `${253.2}px` }}
 			>
 				{/* Corner screws */}
@@ -242,13 +247,18 @@ export const Engineering: React.FC = () => {
 				{/* Panel name */}
 				<div className="flex items-center justify-center h-full">
 					<div className="text-center">
-						<span className="text-gray-800 font-mono text-2xl font-bold block">{panelName}</span>
+						<span className={`${isSchematic ? 'text-gray-800' : 'text-gray-800'} font-mono text-2xl font-bold block`}>{panelName}</span>
+						{isSchematic && (
+							<span className="text-gray-600 font-mono text-sm block mt-2">
+								({otherPlayer}'s Schematic)
+							</span>
+						)}
 						{DEBUG_MODE && PANEL_SYSTEM_MAPPING[panelName] && (
-							<span className="text-gray-700 font-mono text-sm block mt-2">
+							<span className={`${isSchematic ? 'text-gray-600' : 'text-gray-700'} font-mono text-sm block mt-2`}>
 								({PANEL_SYSTEM_MAPPING[panelName]})
 							</span>
 						)}
-						{DEBUG_MODE && (
+						{DEBUG_MODE && !isSchematic && (
 							<div className="mt-4">
 								<div className="text-gray-800 font-mono text-xs">
 									Penalty: {penaltyInfo.multiplier}x
@@ -265,17 +275,24 @@ export const Engineering: React.FC = () => {
 	};
 
 	const renderOpenPanel = (panelName: string) => {
-		const penaltyInfo = getPanelPenaltyInfo(panelName, engineeringState);
+		if (!currentPlayer) return null;
+		const penaltyInfo = getPanelPenaltyInfo(panelName, engineeringState, currentPlayer);
+		const isSchematic = engineeringState.isViewingSchematic;
 
 		return (
-			<div key={panelName} className="bg-gray-700 border-2 border-gray-500 rounded-lg relative">
+			<div key={panelName} className={`${isSchematic ? 'bg-yellow-50' : 'bg-gray-700'} border-2 border-gray-500 rounded-lg relative`}>
 				<div ref={containerRef} className="relative"
 					style={{ height: `${PANEL_SIZE}px`, width: `${PANEL_SIZE}px` }}>
 					<div className="flex justify-between items-center mb-4">
 						<div className="text-center mx-auto">
-							<h3 className="text-white font-mono text-lg">{panelName}</h3>
+							<h3 className={`${isSchematic ? 'text-gray-800' : 'text-white'} font-mono text-lg`}>{panelName}</h3>
+							{isSchematic && (
+								<span className="text-gray-600 font-mono text-sm block">
+									({otherPlayer}'s Schematic)
+								</span>
+							)}
 							{DEBUG_MODE && PANEL_SYSTEM_MAPPING[panelName] && (
-								<span className="text-gray-300 font-mono text-sm block">
+								<span className={`${isSchematic ? 'text-gray-600' : 'text-gray-300'} font-mono text-sm block`}>
 									({PANEL_SYSTEM_MAPPING[panelName]})
 								</span>
 							)}
@@ -283,7 +300,7 @@ export const Engineering: React.FC = () => {
 					</div>
 					
 					{/* Debug penalty display in center */}
-					{DEBUG_MODE && (
+					{DEBUG_MODE && !isSchematic && (
 						<div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-50 p-2 rounded pointer-events-none">
 							<div className="text-white font-mono text-xs text-center">
 								<div>Penalty: {penaltyInfo.multiplier}x</div>
@@ -302,42 +319,42 @@ export const Engineering: React.FC = () => {
 
 					{/* Input nodes */}
 					<div className="absolute left-8 top-8">
-						<div className="text-white text-sm mb-2 text-center">IN</div>
+						<div className={`${isSchematic ? 'text-gray-700' : 'text-white'} text-sm mb-2 text-center`}>IN</div>
 						{COLORS.map((color, index) => (
 							<div
 								key={`input-${index}`}
-								className="w-8 h-8 rounded-full border-2 border-white mb-4 cursor-pointer hover:scale-110 transition-transform"
+								className={`w-8 h-8 rounded-full border-2 ${isSchematic ? 'border-gray-600' : 'border-white'} mb-4 ${!isSchematic ? 'cursor-pointer hover:scale-110' : 'cursor-default'} transition-transform`}
 								style={{ backgroundColor: color }}
-								onMouseDown={(e) => handleNodeMouseDown('input', index, e)}
-								onMouseUp={() => handleNodeMouseUp('input', index)}
+								onMouseDown={!isSchematic ? (e) => handleNodeMouseDown('input', index, e) : undefined}
+								onMouseUp={!isSchematic ? () => handleNodeMouseUp('input', index) : undefined}
 							/>
 						))}
 					</div>
 
 					{/* Center nodes */}
 					<div className="absolute left-[50%] ml-[-16px] top-8">
-						<div className="text-white text-sm mb-2 text-center">V</div>
+						<div className={`${isSchematic ? 'text-gray-700' : 'text-white'} text-sm mb-2 text-center`}>V</div>
 						{COLORS.map((color, index) => (
 							<div
 								key={`node-${index}`}
-								className="w-8 h-8 rounded-full border-2 border-white mb-4 cursor-pointer hover:scale-110 transition-transform"
+								className={`w-8 h-8 rounded-full border-2 ${isSchematic ? 'border-gray-600' : 'border-white'} mb-4 ${!isSchematic ? 'cursor-pointer hover:scale-110' : 'cursor-default'} transition-transform`}
 								style={{ backgroundColor: color }}
-								onMouseDown={(e) => handleNodeMouseDown('node', index, e)}
-								onMouseUp={() => handleNodeMouseUp('node', index)}
+								onMouseDown={!isSchematic ? (e) => handleNodeMouseDown('node', index, e) : undefined}
+								onMouseUp={!isSchematic ? () => handleNodeMouseUp('node', index) : undefined}
 							/>
 						))}
 					</div>
 
 					{/* Output nodes */}
 					<div className="absolute right-8 top-8">
-						<div className="text-white text-sm mb-2 text-center">OUT</div>
+						<div className={`${isSchematic ? 'text-gray-700' : 'text-white'} text-sm mb-2 text-center`}>OUT</div>
 						{COLORS.map((color, index) => (
 							<div
 								key={`output-${index}`}
-								className="w-8 h-8 rounded-full border-2 border-white mb-4 cursor-pointer hover:scale-110 transition-transform"
+								className={`w-8 h-8 rounded-full border-2 ${isSchematic ? 'border-gray-600' : 'border-white'} mb-4 ${!isSchematic ? 'cursor-pointer hover:scale-110' : 'cursor-default'} transition-transform`}
 								style={{ backgroundColor: color }}
-								onMouseDown={(e) => handleNodeMouseDown('output', index, e)}
-								onMouseUp={() => handleNodeMouseUp('output', index)}
+								onMouseDown={!isSchematic ? (e) => handleNodeMouseDown('output', index, e) : undefined}
+								onMouseUp={!isSchematic ? () => handleNodeMouseUp('output', index) : undefined}
 							/>
 						))}
 					</div>
@@ -349,14 +366,18 @@ export const Engineering: React.FC = () => {
 	// Draw wires on canvas
 	useEffect(() => {
 		const canvas = canvasRef.current;
-		if (!canvas || !openPanel) return;
+		if (!canvas || !openPanel || !currentPlayer) return;
 
 		const ctx = canvas.getContext('2d');
 		if (!ctx) return;
 
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-		const panelState = engineeringState.panels[openPanel];
+		// In schematic view, show the correct connections for the other player
+		// In normal view, show the current panel connections for this player
+		const panelState = engineeringState.isViewingSchematic
+			? { connections: engineeringState.correctState[otherPlayer][openPanel].connections }
+			: engineeringState.panels[openPanel];
 
 		// Draw existing connections
 		panelState.connections.forEach((connection, index) => {
@@ -388,11 +409,19 @@ export const Engineering: React.FC = () => {
 			ctx.stroke();
 			ctx.setLineDash([]);
 		}
-	}, [openPanel, engineeringState, dragState, hoveredWire]);
+	}, [openPanel, engineeringState, dragState, hoveredWire, currentPlayer, otherPlayer]);
 	
 	return (
 		<div className="bg-gray-800 p-6 h-full">
-			<h2 className="text-white text-xl font-mono mb-4">Engineering Station</h2>
+			<div className="flex justify-between items-center mb-4">
+				<h2 className="text-white text-xl font-mono">Engineering Station</h2>
+				<button
+					onClick={handleSchematicToggle}
+					className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-mono text-sm rounded transition-colors"
+				>
+					{engineeringState.isViewingSchematic ? 'Back to My Panels' : `${otherPlayer} Schematic`}
+				</button>
+			</div>
 			<div className="grid grid-cols-2 gap-6">
 				{
 					engineeringState.panelOrder.map(panelName => panelName === openPanel ?

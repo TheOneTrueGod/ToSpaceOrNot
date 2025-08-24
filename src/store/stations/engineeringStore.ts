@@ -16,13 +16,21 @@ export interface EngineeringPanels {
 export interface EngineeringState {
   panels: EngineeringPanels;
   correctState: {
-    [panelName: string]: PanelState;
+    Gobi: {
+      [panelName: string]: PanelState;
+    };
+    Ben: {
+      [panelName: string]: PanelState;
+    };
   };
   panelOrder: string[];
+  isViewingSchematic: boolean;
 }
 
 const POTENTIAL_PANEL_NAMES = ["A1b2", "Xy9Z", "3Fp7", "Q8wS"];
-const INPUT_PERMUTATIONS: number[][] = [
+
+// Different permutations for Gobi
+const GOBI_INPUT_PERMUTATIONS: number[][] = [
   [1, 0, 3, 2],
   [2, 3, 1, 0],
   [3, 2, 0, 1],
@@ -30,13 +38,31 @@ const INPUT_PERMUTATIONS: number[][] = [
   [1, 3, 0, 2],
   [2, 0, 3, 1],
 ];
-const OUTPUT_PERMUTATIONS: number[][] = [
+const GOBI_OUTPUT_PERMUTATIONS: number[][] = [
   [0, 1, 2, 3],
   [1, 2, 3, 0],
   [2, 3, 0, 1],
   [3, 0, 1, 2],
   [0, 2, 1, 3],
   [1, 0, 3, 2],
+];
+
+// Different permutations for Ben
+const BEN_INPUT_PERMUTATIONS: number[][] = [
+  [3, 1, 0, 2],
+  [0, 3, 2, 1],
+  [2, 0, 1, 3],
+  [1, 2, 3, 0],
+  [3, 0, 2, 1],
+  [1, 3, 2, 0],
+];
+const BEN_OUTPUT_PERMUTATIONS: number[][] = [
+  [2, 0, 3, 1],
+  [3, 1, 2, 0],
+  [1, 3, 0, 2],
+  [0, 3, 1, 2],
+  [2, 1, 0, 3],
+  [3, 2, 1, 0],
 ];
 const pickRandomUnique = (names: string[], count: number): string[] => {
   // Fisher-Yates shuffle to ensure unbiased random order
@@ -51,18 +77,24 @@ const pickRandomUnique = (names: string[], count: number): string[] => {
 export const PANEL_NAMES = pickRandomUnique(POTENTIAL_PANEL_NAMES, 4);
 
 export const generatePanelState = (
-  panelId: string
+  panelId: string,
+  player: 'Gobi' | 'Ben'
 ): PanelState["connections"] => {
   const connections: WireConnection[] = [];
 
   const nameIndex = POTENTIAL_PANEL_NAMES.indexOf(panelId);
+  
+  // Select permutations based on player
+  const inputPermutations = player === 'Gobi' ? GOBI_INPUT_PERMUTATIONS : BEN_INPUT_PERMUTATIONS;
+  const outputPermutations = player === 'Gobi' ? GOBI_OUTPUT_PERMUTATIONS : BEN_OUTPUT_PERMUTATIONS;
+  
   const inputPermutation =
-    INPUT_PERMUTATIONS[
-      (nameIndex >= 0 ? nameIndex : 0) % INPUT_PERMUTATIONS.length
+    inputPermutations[
+      (nameIndex >= 0 ? nameIndex : 0) % inputPermutations.length
     ];
   const outputPermutation =
-    OUTPUT_PERMUTATIONS[
-      (nameIndex >= 0 ? nameIndex : 0) % OUTPUT_PERMUTATIONS.length
+    outputPermutations[
+      (nameIndex >= 0 ? nameIndex : 0) % outputPermutations.length
     ];
 
   for (let i = 0; i < 4; i++) {
@@ -100,17 +132,37 @@ export const PENALTY_CONFIG = {
   HEAVY_MULTIPLIER: 3
 };
 
-export const generateEngineeringState = (): EngineeringState => {
-  const panels: { [key: string]: PanelState } = {};
+export const generateEngineeringState = (currentPlayer?: 'Gobi' | 'Ben'): EngineeringState => {
+  // Generate different correct states for each player
+  const gobiCorrectState: { [key: string]: PanelState } = {};
+  const benCorrectState: { [key: string]: PanelState } = {};
 
   PANEL_NAMES.forEach((panelName) => {
-    panels[panelName] = { connections: generatePanelState(panelName) };
+    gobiCorrectState[panelName] = { connections: generatePanelState(panelName, 'Gobi') };
+    benCorrectState[panelName] = { connections: generatePanelState(panelName, 'Ben') };
+  });
+
+  // Initialize panels to match the current player's correct state
+  // If no player specified (initial load), default to Gobi's state
+  const panels: { [key: string]: PanelState } = {};
+  const playerToUse = currentPlayer || 'Gobi';
+  const correctStateToUse = playerToUse === 'Gobi' ? gobiCorrectState : benCorrectState;
+  
+  PANEL_NAMES.forEach((panelName) => {
+    // Deep copy the correct state for this player
+    panels[panelName] = { 
+      connections: [...correctStateToUse[panelName].connections] 
+    };
   });
 
   return {
     panels,
-    correctState: JSON.parse(JSON.stringify(panels)),
+    correctState: {
+      Gobi: gobiCorrectState,
+      Ben: benCorrectState,
+    },
     panelOrder: [...PANEL_NAMES].sort(() => Math.random() - 0.5),
+    isViewingSchematic: false,
   };
 };
 
@@ -147,9 +199,9 @@ export const getPenaltyLevel = (incorrectCount: number): 'none' | 'light' | 'med
 };
 
 // Get penalty multiplier for a given system and panel
-export const getPenaltyMultiplier = (panelName: string, engineeringState: EngineeringState): number => {
+export const getPenaltyMultiplier = (panelName: string, engineeringState: EngineeringState, currentPlayer: 'Gobi' | 'Ben'): number => {
   const currentPanel = engineeringState.panels[panelName];
-  const correctPanel = engineeringState.correctState[panelName];
+  const correctPanel = engineeringState.correctState[currentPlayer][panelName];
   
   if (!currentPanel || !correctPanel) return 1;
   
@@ -173,32 +225,32 @@ export const getPenaltyMultiplier = (panelName: string, engineeringState: Engine
 };
 
 // Get penalty multiplier for specific systems
-export const getPowerPenaltyMultiplier = (engineeringState: EngineeringState): number => {
+export const getPowerPenaltyMultiplier = (engineeringState: EngineeringState, currentPlayer: 'Gobi' | 'Ben'): number => {
   const powerPanel = Object.keys(PANEL_SYSTEM_MAPPING).find(
     key => PANEL_SYSTEM_MAPPING[key] === "Power"
   );
-  return powerPanel ? getPenaltyMultiplier(powerPanel, engineeringState) : 1;
+  return powerPanel ? getPenaltyMultiplier(powerPanel, engineeringState, currentPlayer) : 1;
 };
 
-export const getThrustPenaltyMultiplier = (engineeringState: EngineeringState): number => {
+export const getThrustPenaltyMultiplier = (engineeringState: EngineeringState, currentPlayer: 'Gobi' | 'Ben'): number => {
   const thrustPanel = Object.keys(PANEL_SYSTEM_MAPPING).find(
     key => PANEL_SYSTEM_MAPPING[key] === "Thrust"
   );
-  return thrustPanel ? getPenaltyMultiplier(thrustPanel, engineeringState) : 1;
+  return thrustPanel ? getPenaltyMultiplier(thrustPanel, engineeringState, currentPlayer) : 1;
 };
 
-export const getFuelPenaltyMultiplier = (engineeringState: EngineeringState): number => {
+export const getFuelPenaltyMultiplier = (engineeringState: EngineeringState, currentPlayer: 'Gobi' | 'Ben'): number => {
   const fuelPanel = Object.keys(PANEL_SYSTEM_MAPPING).find(
     key => PANEL_SYSTEM_MAPPING[key] === "Fuel"
   );
-  return fuelPanel ? getPenaltyMultiplier(fuelPanel, engineeringState) : 1;
+  return fuelPanel ? getPenaltyMultiplier(fuelPanel, engineeringState, currentPlayer) : 1;
 };
 
-export const getWeaponsPenaltyMultiplier = (engineeringState: EngineeringState): number => {
+export const getWeaponsPenaltyMultiplier = (engineeringState: EngineeringState, currentPlayer: 'Gobi' | 'Ben'): number => {
   const weaponsPanel = Object.keys(PANEL_SYSTEM_MAPPING).find(
     key => PANEL_SYSTEM_MAPPING[key] === "Weapons"
   );
-  return weaponsPanel ? getPenaltyMultiplier(weaponsPanel, engineeringState) : 1;
+  return weaponsPanel ? getPenaltyMultiplier(weaponsPanel, engineeringState, currentPlayer) : 1;
 };
 
 const initialState: EngineeringState = generateEngineeringState();
@@ -213,14 +265,31 @@ export const engineeringSlice = createSlice({
         state.panels[panelName].connections = connections;
       }
     },
-    resetEngineering: (state) => {
-      const newState = generateEngineeringState();
+    resetEngineering: (state, action: PayloadAction<{ player?: 'Gobi' | 'Ben' } | undefined>) => {
+      const player = action?.payload?.player;
+      const newState = generateEngineeringState(player);
       state.panels = newState.panels;
       state.correctState = newState.correctState;
       state.panelOrder = newState.panelOrder;
+      state.isViewingSchematic = false;
+    },
+    toggleSchematicView: (state) => {
+      state.isViewingSchematic = !state.isViewingSchematic;
+    },
+    initializeForPlayer: (state, action: PayloadAction<'Gobi' | 'Ben'>) => {
+      const player = action.payload;
+      // Set panels to match the correct state for this player
+      PANEL_NAMES.forEach((panelName) => {
+        if (state.correctState[player][panelName]) {
+          state.panels[panelName] = {
+            connections: [...state.correctState[player][panelName].connections]
+          };
+        }
+      });
+      state.isViewingSchematic = false;
     }
   }
 });
 
-export const { updatePanelConnections, resetEngineering } = engineeringSlice.actions;
+export const { updatePanelConnections, resetEngineering, toggleSchematicView, initializeForPlayer } = engineeringSlice.actions;
 export default engineeringSlice.reducer;

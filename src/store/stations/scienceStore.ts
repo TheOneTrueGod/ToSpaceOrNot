@@ -51,9 +51,10 @@ const calculateCooldownWithPenalty = (baseCooldown: number): number => {
   try {
     const currentState = store.getState();
     const engineeringState = currentState.engineering;
+    const currentPlayer = currentState.game?.currentPlayer || 'Gobi';
     
     if (engineeringState) {
-      const fuelPenalty = getFuelPenaltyMultiplier(engineeringState);
+      const fuelPenalty = getFuelPenaltyMultiplier(engineeringState, currentPlayer);
       return Math.round(baseCooldown * fuelPenalty);
     }
     

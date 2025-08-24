@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { setCurrentPlayer, setCurrentPage } from '../store/gameStore';
 import { resetNavigation } from '../store/stations/navigationStore';
+import { initializeForPlayer } from '../store/stations/engineeringStore';
 import { RocketAnimation } from '../components/RocketAnimation';
 import { Player } from '../types';
 
@@ -12,6 +13,7 @@ export const HomePage: React.FC = () => {
   const handlePlayerSelect = (player: Player) => {
     dispatch(setCurrentPlayer(player));
     dispatch(resetNavigation({ player }));
+    dispatch(initializeForPlayer(player));
     dispatch(setCurrentPage('play'));
   };
 

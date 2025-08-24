@@ -28,7 +28,8 @@ export const Weapons: React.FC = () => {
   const batteryPower = useSelector((s: RootState) => s.ship.batteryPower);
   const engineeringState = useSelector((s: RootState) => s.engineering);
   
-  const weaponsPenalty = getWeaponsPenaltyMultiplier(engineeringState);
+  const currentPlayer = useSelector((s: RootState) => s.game.currentPlayer);
+  const weaponsPenalty = getWeaponsPenaltyMultiplier(engineeringState, currentPlayer || 'Gobi');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
