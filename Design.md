@@ -111,8 +111,8 @@ The fuel mixture system in the Science station operates on a synchronized but as
 - Players must communicate their partner's correct mixture to successfully refuel their own ship
 - This creates a natural cooperation requirement where players must share information to progress
 
-8.b. Navigation Value Synchronization
-The navigation system implements stage-based progression with cross-player visibility:
+  8.b. Navigation Value Synchronization
+  The navigation system implements stage-based progression with cross-player visibility:
 
 - Navigation has 4 distinct stages based on distance traveled: 0-250km, 250-500km, 500-750km, and 750-1000km
 - Each stage has different correct navigation values (pitch, yaw, roll) for both Gobi and Ben
@@ -121,7 +121,7 @@ The navigation system implements stage-based progression with cross-player visib
 - Each player starts with their own correct navigation values when they select their character
 - Debug mode (development only) shows the current player's correct values for testing purposes
 
-8.c. Synchronization Implementation Details
+  8.c. Synchronization Implementation Details
 
 - Both systems use deterministic algorithms to ensure both players see consistent information
 - The fuel mixture system uses seeded random generators with shared seeds to maintain synchronization
@@ -138,13 +138,25 @@ The navigation system implements stage-based progression with cross-player visib
 
 Types of Disasters;
 9.a Minor
-9.a.i - Navigation Misalignment. One of the navigation values chosen at random is nudged up or down by 1. When this happens, the ship should slide either up or down by about 5 pixels, and then back to its original location. Has a weight of 2.
 
-    	9.a.ii - Single Asteroid.  Between one and three small sized asteroids spawn (a small asteroid has 1-2 layers).  Has a weight of 5.
+    - 9.a.i - Navigation Misalignment. One of the navigation values chosen at random is nudged up or down by 1. When this happens, the ship should slide either up or down by about 5 pixels, and then back to its original location. Has a weight of 2.
 
-    	9.a.iii - Power Surge.  The ship's power is reduced by 50.  Has a weight of 2.
+    - 9.a.ii - Single Asteroid. Between one and three small sized asteroids spawn (a small asteroid has 1-2 layers). Has a weight of 5.
 
-    	9.a.iv - Engineering disaster.
+    - 9.a.iii - Power Surge. The ship's power is reduced by 50. Has a weight of 2.
 
-    9.b Major
-    	9.b.i - Major Asteroid.  Between three and five asteroids
+    - 9.a.iv - Minor Engineering rewire. Pick a panel at random. Pick a connection in it at random (either input to node, or node to output). That connection is either removed, or one end of it is randomly moved to a different end of the same type (for example, if input1 -> node3 is picked, then it could get swapped to input2 -> node3). Write this as a helper function, because we'll be reusing it in Major Engineering rewire. Has a weight of 3
+
+9.b Major
+
+    - 9.b.i - Major Asteroid. Between three and five asteroids spawn. One to two are large, and the rest are small. (a small asteroid has 1-2 layers. a large asteroid has 3-5 layers)
+
+    - 9.b.ii - Major Engineering rewire. Similar to Minor engineering rewire, but do it twice for the chosen panel, and once for a different randomly chosen panel. The same panel should not be chosen twice. This has a weight of
+
+9.c Catastrophic
+
+    - 9.c.i - Three Minor Disasters. Roll from the Minor disaster table three times. All of those events happen.  Then spawn two small asteroids.
+
+    - 9.c.ii - Asteroid Cluster. Between 7 and 10 asteroids spawn. They spawn 50% farther away than normal asteroids. 2-3 should be large, 1-3 should be medium, and the rest should be small. (A medium asteroid has 2-4 layers)
+
+Please code these in a way that creates reusable events and disasters, so we can configure future disasters by mixing and matching these behaviours. There are some clear reusable events (such as spawning an asteroid) - try to make as many of these reusable as possible.
