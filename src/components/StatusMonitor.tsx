@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
 import { RocketAnimation } from "./RocketAnimation";
@@ -10,6 +10,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { Asteroid } from "../store/stations/weaponsStore";
+import { disasterEventBus } from "../systems/DisasterEventBus";
 
 // Constants for asteroid rendering
 const ASTEROID_MIN_SIZE = 10;
@@ -21,6 +22,18 @@ export const StatusMonitor: React.FC = () => {
   const rocketCanvasRef = useRef<HTMLCanvasElement>(null);
   const asteroidCanvasRef = useRef<HTMLCanvasElement>(null);
   const asteroidAnglesRef = useRef<Map<string, number>>(new Map());
+  const [disasterAnimation, setDisasterAnimation] = useState<'slide' | 'shake' | null>(null);
+
+  // Subscribe to disaster events
+  useEffect(() => {
+    const unsubscribe = disasterEventBus.subscribe((animation) => {
+      setDisasterAnimation(animation);
+      // Clear animation after it completes
+      setTimeout(() => setDisasterAnimation(null), animation === 'slide' ? 1000 : 500);
+    });
+    
+    return unsubscribe;
+  }, []);
 
   const renderProgressBar = (
     label: string,
@@ -221,6 +234,7 @@ export const StatusMonitor: React.FC = () => {
           canvasRef={rocketCanvasRef}
           size="small"
           showTrail={true}
+          disasterAnimation={disasterAnimation}
         />
         
         {/* Break overlay */}

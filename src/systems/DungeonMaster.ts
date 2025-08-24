@@ -12,7 +12,8 @@ import {
 } from "../store/shipStore";
 import { AlertSystem } from "./AlertSystem";
 import { AutomaticAlertSystem } from "./AutomaticAlertSystem";
-import { spawnAsteroid, removeAsteroid } from "../store/stations/weaponsStore";
+import { DisasterSystem } from "./DisasterSystem";
+import { removeAsteroid } from "../store/stations/weaponsStore";
 import { NavigationState, getCurrentNavigationStage, updateNavigationStage } from "../store/stations/navigationStore";
 import {
   getThrustPenaltyMultiplier,
@@ -26,6 +27,7 @@ export class DungeonMaster {
   private gameTimer: number | null = null;
   private alertsTriggered: Set<string> = new Set();
   private automaticAlertSystem = AutomaticAlertSystem.getInstance();
+  private disasterSystem = new DisasterSystem();
 
   private calculateShipSpeed(): number {
     const state = store.getState();
@@ -150,12 +152,6 @@ export class DungeonMaster {
   }
 
   start() {
-    // Spawn a few initial asteroids for testing the weapons system
-    const gameClock = store.getState().ship.gameClock;
-    for (let i = 0; i < 3; i++) {
-      store.dispatch(spawnAsteroid({ currentGameTime: gameClock }));
-    }
-
     this.gameTimer = setInterval(() => {
       this.gameLoop();
     }, 1000); // Every real second
@@ -198,6 +194,11 @@ export class DungeonMaster {
       alertsState.navigation
     );
     store.dispatch(setAutomaticAlerts(automaticAlerts));
+
+    // Check for disasters
+    const gameTime = state.gameClock.minutes * 60 + state.gameClock.seconds;
+    const distanceTraveled = state.distanceToDestination.max - state.distanceToDestination.current;
+    this.disasterSystem.checkForDisaster(gameTime, distanceTraveled, state.isOnBreak);
 
     // Update distance travelled based on speed (only if not on break)
     const currentShipState = store.getState().ship;
@@ -356,6 +357,7 @@ export class DungeonMaster {
 
   reset() {
     this.alertsTriggered.clear();
+    this.disasterSystem.reset();
   }
 }
 
