@@ -99,29 +99,52 @@ Finally, each alert will also have a "resolution" check, where it checks the sta
 Every 10 GameMinutes, each active alert's "apply effects" method should be called so they can update the game state
 
 8. Player Synchronization Systems
-   
+
    The game implements a cooperative multiplayer design where both players need to work together, but each player sees different information to encourage communication and coordination. This is achieved through cross-player information display in key systems.
 
 8.a. Fuel Mixture Synchronization
-   The fuel mixture system in the Science station operates on a synchronized but asymmetric information model:
-   - Both players generate the same sequence of fuel mixtures using synchronized seeded random number generators
-   - Each player can only see the correct fuel mixture for the OTHER player's ship
-   - The mixtures change every 20 GameSeconds, synchronized across both players via the same seed progression
-   - Players must communicate their partner's correct mixture to successfully refuel their own ship
-   - This creates a natural cooperation requirement where players must share information to progress
+The fuel mixture system in the Science station operates on a synchronized but asymmetric information model:
+
+- Both players generate the same sequence of fuel mixtures using synchronized seeded random number generators
+- Each player can only see the correct fuel mixture for the OTHER player's ship
+- The mixtures change every 20 GameSeconds, synchronized across both players via the same seed progression
+- Players must communicate their partner's correct mixture to successfully refuel their own ship
+- This creates a natural cooperation requirement where players must share information to progress
 
 8.b. Navigation Value Synchronization
-   The navigation system implements stage-based progression with cross-player visibility:
-   - Navigation has 4 distinct stages based on distance traveled: 0-250km, 250-500km, 500-750km, and 750-1000km
-   - Each stage has different correct navigation values (pitch, yaw, roll) for both Gobi and Ben
-   - Players can see their partner's correct navigation values displayed below their own input controls
-   - When players reach journey break points (at 250km, 500km, and 750km), the navigation values automatically update to the next stage
-   - Each player starts with their own correct navigation values when they select their character
-   - Debug mode (development only) shows the current player's correct values for testing purposes
+The navigation system implements stage-based progression with cross-player visibility:
+
+- Navigation has 4 distinct stages based on distance traveled: 0-250km, 250-500km, 500-750km, and 750-1000km
+- Each stage has different correct navigation values (pitch, yaw, roll) for both Gobi and Ben
+- Players can see their partner's correct navigation values displayed below their own input controls
+- When players reach journey break points (at 250km, 500km, and 750km), the navigation values automatically update to the next stage
+- Each player starts with their own correct navigation values when they select their character
+- Debug mode (development only) shows the current player's correct values for testing purposes
 
 8.c. Synchronization Implementation Details
-   - Both systems use deterministic algorithms to ensure both players see consistent information
-   - The fuel mixture system uses seeded random generators with shared seeds to maintain synchronization
-   - The navigation system uses hardcoded stage-based values that transition at predetermined distance milestones
-   - Break points ([250, 500, 750] km traveled) serve as synchronization checkpoints where both players must coordinate to resume their journey
-   - All synchronization is handled client-side since there is no network communication between players
+
+- Both systems use deterministic algorithms to ensure both players see consistent information
+- The fuel mixture system uses seeded random generators with shared seeds to maintain synchronization
+- The navigation system uses hardcoded stage-based values that transition at predetermined distance milestones
+- Break points ([250, 500, 750] km traveled) serve as synchronization checkpoints where both players must coordinate to resume their journey
+- All synchronization is handled client-side since there is no network communication between players
+
+9. Disasters
+   The Dungeon Master is in charge of causing disasters occasionally. A disaster should occur at minimum 10 seconds after the previous one, and at maximum 30 seconds after the previous one.
+   Disasters should be either minor, major, or catastrophic. The farther the ship has progressed, the more severe disasters should be on average. For example, catastrophic disasters should not happen until the ship has passed the 500 distance threshold (check the constants for the distance thresholds). Disasters should not happen while the ship is on a break.
+   A small animation can play in the rocket display whenever a disaster happens. Each each disaster has a weight associated with it, which reflects the chance of it happening.
+   Engineering disasters have some special case handling.
+   The first disaster should always happen after 30 seconds, and should be a major asteroid disaster (see section 9.b.i).
+
+Types of Disasters;
+9.a Minor
+9.a.i - Navigation Misalignment. One of the navigation values chosen at random is nudged up or down by 1. When this happens, the ship should slide either up or down by about 5 pixels, and then back to its original location. Has a weight of 2.
+
+    	9.a.ii - Single Asteroid.  Between one and three small sized asteroids spawn (a small asteroid has 1-2 layers).  Has a weight of 5.
+
+    	9.a.iii - Power Surge.  The ship's power is reduced by 50.  Has a weight of 2.
+
+    	9.a.iv - Engineering disaster.
+
+    9.b Major
+    	9.b.i - Major Asteroid.  Between three and five asteroids
