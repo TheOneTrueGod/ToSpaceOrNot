@@ -12,8 +12,7 @@ import {
   isPulseFrequencyCorrect,
   FUEL_COLORS,
   FUEL_ADDED_PER_CORRECT_MIXTURE,
-  REFUEL_COOLDOWN_SECONDS,
-  DUMP_COOLDOWN_SECONDS,
+  PULSE_FREQUENCY_ENABLED,
   FuelType
 } from '../store/stations/scienceStore';
 import { updateSystemValue } from '../store/shipStore';
@@ -284,15 +283,17 @@ export const Science: React.FC = () => {
           </p>
         </div>
         
-        <div className="bg-gray-700 p-6 rounded-lg">
-          <h3 className="text-lg font-mono text-teal-400 mb-4">Pulse Frequency Control</h3>
-          <div className="flex justify-center">
-            <PulseButton />
+        {PULSE_FREQUENCY_ENABLED && (
+          <div className="bg-gray-700 p-6 rounded-lg">
+            <h3 className="text-lg font-mono text-teal-400 mb-4">Pulse Frequency Control</h3>
+            <div className="flex justify-center">
+              <PulseButton />
+            </div>
+            <p className="text-xs text-gray-400 text-center mt-4">
+              Click the button to match the reactor pulse frequency
+            </p>
           </div>
-          <p className="text-xs text-gray-400 text-center mt-4">
-            Click the button to match the reactor pulse frequency
-          </p>
-        </div>
+        )}
       </div>
     </div>
   );

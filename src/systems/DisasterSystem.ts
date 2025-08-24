@@ -195,7 +195,7 @@ export const DISASTER_TYPES: DisasterType[] = [
   {
     name: "Minor Engineering Rewire",
     severity: "minor",
-    weight: 3,
+    weight: 30,
     minDistance: 0,
     execute: () => {
       DisasterEvents.engineeringRewire();

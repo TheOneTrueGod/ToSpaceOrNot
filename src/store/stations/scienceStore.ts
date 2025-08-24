@@ -45,6 +45,7 @@ const PULSE_FREQUENCY_TOLERANCE = 100;
 export const FUEL_ADDED_PER_CORRECT_MIXTURE = 100;
 export const REFUEL_COOLDOWN_SECONDS = 20;
 export const DUMP_COOLDOWN_SECONDS = 5;
+export const PULSE_FREQUENCY_ENABLED = false;
 
 // Helper function to calculate actual cooldown with engineering penalty
 const calculateCooldownWithPenalty = (baseCooldown: number): number => {

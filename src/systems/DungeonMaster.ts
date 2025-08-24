@@ -20,8 +20,9 @@ import {
   getFuelPenaltyMultiplier,
   getPowerPenaltyMultiplier,
   getWeaponsPenaltyMultiplier,
+  countIncorrectConnections,
 } from "../store/stations/engineeringStore";
-import { isPulseFrequencyCorrect } from "../store/stations/scienceStore";
+import { isPulseFrequencyCorrect, PULSE_FREQUENCY_ENABLED } from "../store/stations/scienceStore";
 
 export class DungeonMaster {
   private gameTimer: number | null = null;
@@ -149,6 +150,51 @@ export class DungeonMaster {
         }
       }
     });
+
+    // Check for general engineering malfunction alert (yellow warning)
+    const generalAlertName = "Engineering Malfunction";
+    const hasGeneralAlert = currentAlerts.some(
+      (alert) => alert.name === generalAlertName && alert.isActive
+    );
+
+    // Check if ANY panel has ANY errors
+    let hasAnyErrors = false;
+    for (const panelName of Object.keys(engineeringState.panels)) {
+      const currentPanel = engineeringState.panels[panelName];
+      const correctPanel = engineeringState.correctState[currentPlayer][panelName];
+      
+      if (currentPanel && correctPanel) {
+        const incorrectCount = countIncorrectConnections(
+          currentPanel.connections,
+          correctPanel.connections
+        );
+        if (incorrectCount > 0) {
+          hasAnyErrors = true;
+          break;
+        }
+      }
+    }
+
+    if (hasAnyErrors && !hasGeneralAlert) {
+      // Add general engineering malfunction alert
+      const generalAlert = AlertSystem.createAlert(
+        generalAlertName,
+        "Engineering panels have wiring errors. Check all panels for incorrect connections.",
+        "Warning",
+        "Gobi", // Default owner, could be made configurable
+        [],
+        "automatic"
+      );
+      store.dispatch(addAlert(generalAlert));
+    } else if (!hasAnyErrors && hasGeneralAlert) {
+      // Remove general engineering malfunction alert
+      const alertToRemove = currentAlerts.find(
+        (alert) => alert.name === generalAlertName && alert.isActive
+      );
+      if (alertToRemove) {
+        store.dispatch(removeAlert(alertToRemove.id));
+      }
+    }
   }
 
   start() {
@@ -179,7 +225,7 @@ export class DungeonMaster {
     const engineeringPenalty = engineeringState
       ? getPowerPenaltyMultiplier(engineeringState, currentPlayer)
       : 1;
-    const scienceCorrect = scienceState
+    const scienceCorrect = scienceState && PULSE_FREQUENCY_ENABLED
       ? isPulseFrequencyCorrect(scienceState)
       : true;
 

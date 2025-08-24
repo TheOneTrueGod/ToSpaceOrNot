@@ -172,8 +172,17 @@ export const Weapons: React.FC = () => {
     ctx.fillStyle = '#1F2937';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // Draw each asteroid
-    asteroids.forEach(a => drawAsteroid(ctx, a));
+    if (asteroids.length === 0) {
+      // Show "No Threats Detected" when no asteroids
+      ctx.fillStyle = '#10B981'; // Green color
+      ctx.font = 'bold 24px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('No Threats Detected', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+    } else {
+      // Draw each asteroid
+      asteroids.forEach(a => drawAsteroid(ctx, a));
+    }
   }, [asteroids, gameClock, drawAsteroid]);
 
   const buttons: { label: WeaponType; color: string }[] = useMemo(
