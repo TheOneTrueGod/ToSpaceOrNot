@@ -52,12 +52,6 @@ export class DungeonMaster {
       speed -= 2; // Two or more navigation numbers incorrect
     }
 
-    // Check fuel levels
-    const fuelPercentage =
-      shipState.fuelLevels.current / shipState.fuelLevels.max;
-    if (fuelPercentage < 0.25) {
-      speed -= 1; // Fuel below 1/4
-    }
 
     // Apply engineering thrust penalty
     if (engineeringState) {
