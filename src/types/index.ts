@@ -33,8 +33,8 @@ export interface SystemEffect {
 
 // Player constants
 export const Players = {
-  PLAYER_ONE: 'Gobi' as const,
-  PLAYER_TWO: 'Ben' as const,
+  PLAYER_ONE: 'Albatross' as const,
+  PLAYER_TWO: 'Kestrel' as const,
 } as const;
 
 export type Player = typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO;

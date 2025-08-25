@@ -1,10 +1,10 @@
-import React, { useRef } from 'react';
-import { useDispatch } from 'react-redux';
-import { setCurrentPlayer, setCurrentPage } from '../store/gameStore';
-import { resetNavigation } from '../store/stations/navigationStore';
-import { initializeForPlayer } from '../store/stations/engineeringStore';
-import { RocketAnimation } from '../components/RocketAnimation';
-import { Player, Players } from '../types';
+import React, { useRef } from "react";
+import { useDispatch } from "react-redux";
+import { setCurrentPlayer, setCurrentPage } from "../store/gameStore";
+import { resetNavigation } from "../store/stations/navigationStore";
+import { initializeForPlayer } from "../store/stations/engineeringStore";
+import { RocketAnimation } from "../components/RocketAnimation";
+import { Player, Players } from "../types";
 
 export const HomePage: React.FC = () => {
   const dispatch = useDispatch();
@@ -14,7 +14,7 @@ export const HomePage: React.FC = () => {
     dispatch(setCurrentPlayer(player));
     dispatch(resetNavigation({ player }));
     dispatch(initializeForPlayer(player));
-    dispatch(setCurrentPage('play'));
+    dispatch(setCurrentPage("play"));
   };
 
   return (
@@ -32,7 +32,11 @@ export const HomePage: React.FC = () => {
           height={200}
           className="mx-auto"
         />
-        <RocketAnimation canvasRef={rocketCanvasRef} size="large" showTrail={true} />
+        <RocketAnimation
+          canvasRef={rocketCanvasRef}
+          size="large"
+          showTrail={true}
+        />
       </div>
 
       {/* Player Selection */}
@@ -46,8 +50,7 @@ export const HomePage: React.FC = () => {
         >
           <div className="flex flex-col items-center">
             <span className="text-2xl mb-1">🚀</span>
-            <span>GOBI</span>
-            <span className="text-sm opacity-75">Engineer • Weapons</span>
+            <span>ALBATROSS</span>
           </div>
         </button>
 
@@ -60,8 +63,7 @@ export const HomePage: React.FC = () => {
         >
           <div className="flex flex-col items-center">
             <span className="text-2xl mb-1">🧭</span>
-            <span>BEN</span>
-            <span className="text-sm opacity-75">Navigation • Science</span>
+            <span>KESTREL</span>
           </div>
         </button>
       </div>
@@ -76,7 +78,7 @@ export const HomePage: React.FC = () => {
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
               animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${2 + Math.random() * 3}s`
+              animationDuration: `${2 + Math.random() * 3}s`,
             }}
           />
         ))}

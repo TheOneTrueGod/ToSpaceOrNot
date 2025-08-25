@@ -131,7 +131,7 @@ export const Navigation: React.FC = () => {
         {/* Other Player's Correct Values */}
         <div className="bg-gray-700 p-4 rounded-lg border border-gray-600">
           <h3 className="text-sm font-mono text-teal-400 mb-3 text-center">
-            {currentPlayer === Players.PLAYER_ONE ? "Ben's" : "Gobi's"} Correct Values
+            {currentPlayer === Players.PLAYER_ONE ? "Kestrel's" : "Albatross's"} Correct Values
           </h3>
           <div className="flex items-center space-x-4">
             {/* Other Player's Pitch */}
@@ -141,8 +141,8 @@ export const Navigation: React.FC = () => {
               </label>
               <div className="w-full px-2 py-1 bg-gray-600 border border-gray-500 rounded font-mono text-sm text-white text-center">
                 {currentPlayer === Players.PLAYER_ONE
-                  ? navigationState.correctValues.ben.pitch.toFixed(1)
-                  : navigationState.correctValues.gobi.pitch.toFixed(1)}
+                  ? navigationState.correctValues.kestrel.pitch.toFixed(1)
+                  : navigationState.correctValues.albatross.pitch.toFixed(1)}
               </div>
             </div>
 
@@ -153,8 +153,8 @@ export const Navigation: React.FC = () => {
               </label>
               <div className="w-full px-2 py-1 bg-gray-600 border border-gray-500 rounded font-mono text-sm text-white text-center">
                 {currentPlayer === Players.PLAYER_ONE
-                  ? navigationState.correctValues.ben.yaw.toFixed(1)
-                  : navigationState.correctValues.gobi.yaw.toFixed(1)}
+                  ? navigationState.correctValues.kestrel.yaw.toFixed(1)
+                  : navigationState.correctValues.albatross.yaw.toFixed(1)}
               </div>
             </div>
 
@@ -165,8 +165,8 @@ export const Navigation: React.FC = () => {
               </label>
               <div className="w-full px-2 py-1 bg-gray-600 border border-gray-500 rounded font-mono text-sm text-white text-center">
                 {currentPlayer === Players.PLAYER_ONE
-                  ? navigationState.correctValues.ben.roll.toFixed(1)
-                  : navigationState.correctValues.gobi.roll.toFixed(1)}
+                  ? navigationState.correctValues.kestrel.roll.toFixed(1)
+                  : navigationState.correctValues.albatross.roll.toFixed(1)}
               </div>
             </div>
           </div>
@@ -186,8 +186,8 @@ export const Navigation: React.FC = () => {
                 </label>
                 <div className="w-full px-2 py-1 bg-red-800 border border-red-500 rounded font-mono text-sm text-white text-center">
                   {currentPlayer === Players.PLAYER_ONE
-                    ? navigationState.correctValues.gobi.pitch.toFixed(1)
-                    : navigationState.correctValues.ben.pitch.toFixed(1)}
+                    ? navigationState.correctValues.albatross.pitch.toFixed(1)
+                    : navigationState.correctValues.kestrel.pitch.toFixed(1)}
                 </div>
               </div>
 
@@ -198,8 +198,8 @@ export const Navigation: React.FC = () => {
                 </label>
                 <div className="w-full px-2 py-1 bg-red-800 border border-red-500 rounded font-mono text-sm text-white text-center">
                   {currentPlayer === Players.PLAYER_ONE
-                    ? navigationState.correctValues.gobi.yaw.toFixed(1)
-                    : navigationState.correctValues.ben.yaw.toFixed(1)}
+                    ? navigationState.correctValues.albatross.yaw.toFixed(1)
+                    : navigationState.correctValues.kestrel.yaw.toFixed(1)}
                 </div>
               </div>
 
@@ -210,8 +210,8 @@ export const Navigation: React.FC = () => {
                 </label>
                 <div className="w-full px-2 py-1 bg-red-800 border border-red-500 rounded font-mono text-sm text-white text-center">
                   {currentPlayer === Players.PLAYER_ONE
-                    ? navigationState.correctValues.gobi.roll.toFixed(1)
-                    : navigationState.correctValues.ben.roll.toFixed(1)}
+                    ? navigationState.correctValues.albatross.roll.toFixed(1)
+                    : navigationState.correctValues.kestrel.roll.toFixed(1)}
                 </div>
               </div>
             </div>

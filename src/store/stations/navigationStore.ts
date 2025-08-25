@@ -9,8 +9,8 @@ export interface NavigationValues {
 
 export interface NavigationState {
   correctValues: {
-    gobi: NavigationValues;
-    ben: NavigationValues;
+    albatross: NavigationValues;
+    kestrel: NavigationValues;
   };
   current: NavigationValues;
 }
@@ -19,23 +19,23 @@ export interface NavigationState {
 const NAVIGATION_VALUES_BY_QUADRANT = {
   // Alpha Quadrant: 0-250km traveled
   [Quadrant.Alpha]: {
-    gobi: { pitch: 15.5, yaw: 270.0, roll: 0.0 },
-    ben: { pitch: 12.3, yaw: 275.5, roll: -2.1 },
+    albatross: { pitch: 15.5, yaw: 270.0, roll: 0.0 },
+    kestrel: { pitch: 12.3, yaw: 275.5, roll: -2.1 },
   },
   // Beta Quadrant: 250-500km traveled
   [Quadrant.Beta]: {
-    gobi: { pitch: 18.7, yaw: 265.2, roll: 1.5 },
-    ben: { pitch: 16.1, yaw: 272.8, roll: -0.9 },
+    albatross: { pitch: 18.7, yaw: 265.2, roll: 1.5 },
+    kestrel: { pitch: 16.1, yaw: 272.8, roll: -0.9 },
   },
   // Gamma Quadrant: 500-750km traveled
   [Quadrant.Gamma]: {
-    gobi: { pitch: 14.2, yaw: 278.3, roll: -1.2 },
-    ben: { pitch: 19.8, yaw: 268.7, roll: 2.3 },
+    albatross: { pitch: 14.2, yaw: 278.3, roll: -1.2 },
+    kestrel: { pitch: 19.8, yaw: 268.7, roll: 2.3 },
   },
   // Delta Quadrant: 750-1000km traveled
   [Quadrant.Delta]: {
-    gobi: { pitch: 17.6, yaw: 263.9, roll: 0.8 },
-    ben: { pitch: 13.4, yaw: 281.2, roll: -1.7 },
+    albatross: { pitch: 17.6, yaw: 263.9, roll: 0.8 },
+    kestrel: { pitch: 13.4, yaw: 281.2, roll: -1.7 },
   },
 } as const;
 
@@ -94,8 +94,8 @@ export const navigationSlice = createSlice({
       const player = action.payload?.player || Players.PLAYER_ONE;
       state.current =
         player === Players.PLAYER_ONE
-          ? { ...state.correctValues.gobi }
-          : { ...state.correctValues.ben };
+          ? { ...state.correctValues.albatross }
+          : { ...state.correctValues.kestrel };
     },
     updateNavigationStage: (
       state,

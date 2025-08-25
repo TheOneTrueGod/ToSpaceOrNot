@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a React-based space ship simulation game built with TypeScript, Redux Toolkit, and Vite. The game is designed for two players (Gobi and Ben) who play on separate computers in the same room, managing different ship systems collaboratively.
+This is a React-based space ship simulation game built with TypeScript, Redux Toolkit, and Vite. The game is designed for two players (Albatross and Kestrel) who play on separate computers in the same room, managing different ship systems collaboratively.
 
 ### Core Technology Stack
 - **React 18** with TypeScript for UI components

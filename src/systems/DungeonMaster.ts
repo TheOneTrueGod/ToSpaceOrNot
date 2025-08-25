@@ -75,8 +75,8 @@ export class DungeonMaster {
     
     // Get the correct values for the current player
     const correctValues = currentPlayer === Players.PLAYER_ONE 
-      ? navigationState.correctValues.gobi 
-      : navigationState.correctValues.ben;
+      ? navigationState.correctValues.albatross 
+      : navigationState.correctValues.kestrel;
 
     if (
       Math.abs(navigationState.current.pitch - correctValues.pitch) >

@@ -208,27 +208,27 @@ export class AutomaticAlertSystem {
     const currentYaw = navigationState.current.yaw;
     const currentRoll = navigationState.current.roll;
     
-    const gobiCorrect = navigationState.correctValues.gobi;
-    const benCorrect = navigationState.correctValues.ben;
+    const albatrossCorrect = navigationState.correctValues.albatross;
+    const kestrelCorrect = navigationState.correctValues.kestrel;
     
     // Check if pitch matches either player's correct value
-    const pitchMatchesGobi = Math.abs(currentPitch - gobiCorrect.pitch) <= tolerance;
-    const pitchMatchesBen = Math.abs(currentPitch - benCorrect.pitch) <= tolerance;
-    if (!pitchMatchesGobi && !pitchMatchesBen) {
+    const pitchMatchesAlbatross = Math.abs(currentPitch - albatrossCorrect.pitch) <= tolerance;
+    const pitchMatchesKestrel = Math.abs(currentPitch - kestrelCorrect.pitch) <= tolerance;
+    if (!pitchMatchesAlbatross && !pitchMatchesKestrel) {
       issues.push('pitch');
     }
     
     // Check if yaw matches either player's correct value
-    const yawMatchesGobi = Math.abs(currentYaw - gobiCorrect.yaw) <= tolerance;
-    const yawMatchesBen = Math.abs(currentYaw - benCorrect.yaw) <= tolerance;
-    if (!yawMatchesGobi && !yawMatchesBen) {
+    const yawMatchesAlbatross = Math.abs(currentYaw - albatrossCorrect.yaw) <= tolerance;
+    const yawMatchesKestrel = Math.abs(currentYaw - kestrelCorrect.yaw) <= tolerance;
+    if (!yawMatchesAlbatross && !yawMatchesKestrel) {
       issues.push('yaw');
     }
     
     // Check if roll matches either player's correct value
-    const rollMatchesGobi = Math.abs(currentRoll - gobiCorrect.roll) <= tolerance;
-    const rollMatchesBen = Math.abs(currentRoll - benCorrect.roll) <= tolerance;
-    if (!rollMatchesGobi && !rollMatchesBen) {
+    const rollMatchesAlbatross = Math.abs(currentRoll - albatrossCorrect.roll) <= tolerance;
+    const rollMatchesKestrel = Math.abs(currentRoll - kestrelCorrect.roll) <= tolerance;
+    if (!rollMatchesAlbatross && !rollMatchesKestrel) {
       issues.push('roll');
     }
 

@@ -413,7 +413,7 @@ const FuelMixingGame: React.FC = () => {
 
         <div>
           <h3 className="text-sm font-mono text-gray-400 mb-2 text-center">
-            {currentPlayer === Players.PLAYER_ONE ? "Ben's" : "Gobi's"} Target
+            {currentPlayer === Players.PLAYER_ONE ? "Kestrel's" : "Albatross's"} Target
           </h3>
           <div className="flex items-center gap-2">
             <div>

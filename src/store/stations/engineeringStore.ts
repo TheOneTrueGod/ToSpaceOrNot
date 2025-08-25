@@ -33,8 +33,8 @@ export interface EngineeringState {
 
 const POTENTIAL_PANEL_NAMES = ["A1b2", "Xy9Z", "3Fp7", "Q8wS"];
 
-// Different permutations for Gobi
-const GOBI_INPUT_PERMUTATIONS: number[][] = [
+// Different permutations for Albatross
+const ALBATROSS_INPUT_PERMUTATIONS: number[][] = [
   [1, 0, 3, 2],
   [2, 3, 1, 0],
   [3, 2, 0, 1],
@@ -42,7 +42,7 @@ const GOBI_INPUT_PERMUTATIONS: number[][] = [
   [1, 3, 0, 2],
   [2, 0, 3, 1],
 ];
-const GOBI_OUTPUT_PERMUTATIONS: number[][] = [
+const ALBATROSS_OUTPUT_PERMUTATIONS: number[][] = [
   [0, 1, 2, 3],
   [1, 2, 3, 0],
   [2, 3, 0, 1],
@@ -51,8 +51,8 @@ const GOBI_OUTPUT_PERMUTATIONS: number[][] = [
   [1, 0, 3, 2],
 ];
 
-// Different permutations for Ben
-const BEN_INPUT_PERMUTATIONS: number[][] = [
+// Different permutations for Kestrel
+const KESTREL_INPUT_PERMUTATIONS: number[][] = [
   [3, 1, 0, 2],
   [0, 3, 2, 1],
   [2, 0, 1, 3],
@@ -60,7 +60,7 @@ const BEN_INPUT_PERMUTATIONS: number[][] = [
   [3, 0, 2, 1],
   [1, 3, 2, 0],
 ];
-const BEN_OUTPUT_PERMUTATIONS: number[][] = [
+const KESTREL_OUTPUT_PERMUTATIONS: number[][] = [
   [2, 0, 3, 1],
   [3, 1, 2, 0],
   [1, 3, 0, 2],
@@ -90,9 +90,9 @@ export const generatePanelState = (
 
   // Select permutations based on player
   const inputPermutations =
-    player === Players.PLAYER_ONE ? GOBI_INPUT_PERMUTATIONS : BEN_INPUT_PERMUTATIONS;
+    player === Players.PLAYER_ONE ? ALBATROSS_INPUT_PERMUTATIONS : KESTREL_INPUT_PERMUTATIONS;
   const outputPermutations =
-    player === Players.PLAYER_ONE ? GOBI_OUTPUT_PERMUTATIONS : BEN_OUTPUT_PERMUTATIONS;
+    player === Players.PLAYER_ONE ? ALBATROSS_OUTPUT_PERMUTATIONS : KESTREL_OUTPUT_PERMUTATIONS;
 
   const inputPermutation =
     inputPermutations[
@@ -142,14 +142,14 @@ export const generateEngineeringState = (
   currentPlayer?: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO
 ): EngineeringState => {
   // Generate different correct states for each player
-  const gobiCorrectState: { [key: string]: PanelState } = {};
-  const benCorrectState: { [key: string]: PanelState } = {};
+  const albatrossCorrectState: { [key: string]: PanelState } = {};
+  const kestrelCorrectState: { [key: string]: PanelState } = {};
 
   PANEL_NAMES.forEach((panelName) => {
-    gobiCorrectState[panelName] = {
+    albatrossCorrectState[panelName] = {
       connections: generatePanelState(panelName, Players.PLAYER_ONE),
     };
-    benCorrectState[panelName] = {
+    kestrelCorrectState[panelName] = {
       connections: generatePanelState(panelName, Players.PLAYER_TWO),
     };
   });
@@ -159,7 +159,7 @@ export const generateEngineeringState = (
   const panels: { [key: string]: PanelState } = {};
   const playerToUse = currentPlayer || Players.PLAYER_ONE;
   const correctStateToUse =
-    playerToUse === Players.PLAYER_ONE ? gobiCorrectState : benCorrectState;
+    playerToUse === Players.PLAYER_ONE ? albatrossCorrectState : kestrelCorrectState;
 
   PANEL_NAMES.forEach((panelName) => {
     // Deep copy the correct state for this player
@@ -171,8 +171,8 @@ export const generateEngineeringState = (
   return {
     panels,
     correctState: {
-      [Players.PLAYER_ONE]: gobiCorrectState,
-      [Players.PLAYER_TWO]: benCorrectState,
+      [Players.PLAYER_ONE]: albatrossCorrectState,
+      [Players.PLAYER_TWO]: kestrelCorrectState,
     },
     panelOrder: [...PANEL_NAMES].sort(() => Math.random() - 0.5),
     isViewingSchematic: false,
