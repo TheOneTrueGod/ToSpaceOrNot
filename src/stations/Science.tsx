@@ -15,9 +15,13 @@ import {
   FUEL_COLORS,
   FUEL_ADDED_PER_CORRECT_MIXTURE,
   PULSE_FREQUENCY_ENABLED,
+  REFUEL_COOLDOWN_SECONDS,
+  DUMP_COOLDOWN_SECONDS,
+  DUMP_ALL_COOLDOWN_SECONDS,
   FuelType,
 } from "../store/stations/scienceStore";
 import { updateSystemValue } from "../store/shipStore";
+import { ButtonWithProgressBar } from "../components/ButtonWithProgressBar";
 
 const PulseButton: React.FC = () => {
   const dispatch = useDispatch();
@@ -332,19 +336,20 @@ const FuelMixingGame: React.FC = () => {
             ))}
           </div>
           <div className="flex justify-center mt-4">
-            <button
+            <ButtonWithProgressBar
               onClick={handleRefuel}
               disabled={isRefuelOnCooldown}
-              className={`px-4 py-2 rounded font-mono text-sm ${
+              label="Restock"
+              cooldownRemaining={refuelCooldownRemaining}
+              maxCooldown={REFUEL_COOLDOWN_SECONDS}
+              baseColor="bg-blue-600 hover:bg-blue-700"
+              showCooldownInLabel={false}
+              tooltip={
                 isRefuelOnCooldown
-                  ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700 text-white"
-              }`}
-            >
-              {isRefuelOnCooldown
-                ? `Restock (${refuelCooldownRemaining}s)`
-                : "Restock"}
-            </button>
+                  ? `On cooldown: ${refuelCooldownRemaining}s remaining`
+                  : "Refill storage tubes with random fuel layers"
+              }
+            />
           </div>
         </div>
 
@@ -361,41 +366,47 @@ const FuelMixingGame: React.FC = () => {
           </div>
 
           <div className="flex flex-col h-full gap-4">
-            <button
+            <ButtonWithProgressBar
               onClick={handleDump}
               disabled={
                 isDumpOnCooldown ||
                 scienceState.fuelMixture.activeTube.layers.length === 0
               }
-              className={`px-4 py-2 rounded font-mono text-sm mt-auto ${
-                isDumpOnCooldown ||
-                scienceState.fuelMixture.activeTube.layers.length === 0
-                  ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                  : "bg-orange-600 hover:bg-orange-700 text-white"
-              }`}
-            >
-              {isDumpOnCooldown
-                ? `Dump one (${dumpCooldownRemaining}s)`
-                : "Dump one"}
-            </button>
+              label="Dump one"
+              cooldownRemaining={dumpCooldownRemaining}
+              maxCooldown={DUMP_COOLDOWN_SECONDS}
+              baseColor="bg-orange-600 hover:bg-orange-700"
+              className="mt-auto"
+              showCooldownInLabel={false}
+              tooltip={
+                isDumpOnCooldown
+                  ? `On cooldown: ${dumpCooldownRemaining}s remaining`
+                  : scienceState.fuelMixture.activeTube.layers.length === 0
+                  ? "Active tube is empty"
+                  : "Remove the top layer from the active tube"
+              }
+            />
 
-            <button
+            <ButtonWithProgressBar
               onClick={handleDumpAll}
               disabled={
                 isDumpAllOnCooldown ||
                 scienceState.fuelMixture.activeTube.layers.length === 0
               }
-              className={`px-4 py-2 rounded font-mono text-sm mb-auto ${
-                isDumpAllOnCooldown ||
-                scienceState.fuelMixture.activeTube.layers.length === 0
-                  ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                  : "bg-red-600 hover:bg-red-700 text-white"
-              }`}
-            >
-              {isDumpAllOnCooldown
-                ? `Dump all (${dumpAllCooldownRemaining}s)`
-                : "Dump all"}
-            </button>
+              label="Dump all"
+              cooldownRemaining={dumpAllCooldownRemaining}
+              maxCooldown={DUMP_ALL_COOLDOWN_SECONDS}
+              baseColor="bg-red-600 hover:bg-red-700"
+              className="mb-auto"
+              showCooldownInLabel={false}
+              tooltip={
+                isDumpAllOnCooldown
+                  ? `On cooldown: ${dumpAllCooldownRemaining}s remaining`
+                  : scienceState.fuelMixture.activeTube.layers.length === 0
+                  ? "Active tube is empty"
+                  : "Remove all layers from the active tube"
+              }
+            />
           </div>
         </div>
 

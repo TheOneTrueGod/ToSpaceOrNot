@@ -9,6 +9,8 @@ interface ButtonWithProgressBarProps {
   className?: string;
   baseColor?: string;
   disabledColor?: string;
+  tooltip?: string;
+  showCooldownInLabel?: boolean;
 }
 
 export const ButtonWithProgressBar: React.FC<ButtonWithProgressBarProps> = ({
@@ -20,6 +22,8 @@ export const ButtonWithProgressBar: React.FC<ButtonWithProgressBarProps> = ({
   className = '',
   baseColor = 'bg-blue-600 hover:bg-blue-700',
   disabledColor = 'bg-gray-600',
+  tooltip,
+  showCooldownInLabel = true,
 }) => {
   const isOnCooldown = cooldownRemaining > 0;
   const cooldownProgress = isOnCooldown ? 1 - (cooldownRemaining / maxCooldown) : 1;
@@ -28,13 +32,14 @@ export const ButtonWithProgressBar: React.FC<ButtonWithProgressBarProps> = ({
     disabled ? `${disabledColor} text-gray-400 cursor-not-allowed` : `${baseColor}`
   } ${className}`;
 
-  const displayLabel = isOnCooldown ? `${label} (${cooldownRemaining}s)` : label;
+  const displayLabel = showCooldownInLabel && isOnCooldown ? `${label} (${cooldownRemaining}s)` : label;
 
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       className={buttonClasses}
+      title={tooltip}
     >
       {/* Cooldown progress bar overlay */}
       {isOnCooldown && (
