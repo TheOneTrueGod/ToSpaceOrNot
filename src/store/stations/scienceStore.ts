@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { store } from '../index';
 import { getFuelPenaltyMultiplier } from './engineeringStore';
+import { Quadrant, getQuadrant } from '../../types';
 
 export type FuelType = 'Hydrogen' | 'Xenon' | 'Plutonium' | 'Helium';
 
@@ -32,6 +33,7 @@ export interface ScienceState {
     changeCount: number;
     refuelCooldownUntil: number;
     dumpCooldownUntil: number;
+    dumpAllCooldownUntil: number; // New cooldown for dump all
   };
   randomSeeds: {
     ownShip: number;
@@ -45,7 +47,24 @@ const PULSE_FREQUENCY_TOLERANCE = 100;
 export const FUEL_ADDED_PER_CORRECT_MIXTURE = 100;
 export const REFUEL_COOLDOWN_SECONDS = 20;
 export const DUMP_COOLDOWN_SECONDS = 5;
+export const DUMP_ALL_COOLDOWN_SECONDS = 20;
 export const PULSE_FREQUENCY_ENABLED = false;
+
+// Get the required mixture length based on quadrant
+export const getMixtureLength = (distanceTraveled: number): number => {
+  const quadrant = getQuadrant(distanceTraveled);
+  switch (quadrant) {
+    case Quadrant.Alpha:
+      return 3; // Easy mode in Alpha Quadrant
+    case Quadrant.Beta:
+    case Quadrant.Gamma:
+      return 4; // Medium difficulty in Beta/Gamma
+    case Quadrant.Delta:
+      return 5; // Hard mode in Delta Quadrant
+    default:
+      return 3;
+  }
+};
 
 // Helper function to calculate actual cooldown with engineering penalty
 const calculateCooldownWithPenalty = (baseCooldown: number): number => {
@@ -87,10 +106,10 @@ class SeededRandom {
   }
 }
 
-const generateFuelMixture = (seed: number): FuelType[] => {
+const generateFuelMixture = (seed: number, length: number = 5): FuelType[] => {
   const rng = new SeededRandom(seed);
   const mixture: FuelType[] = [];
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < length; i++) {
     mixture.push(rng.nextFuelType());
   }
   return mixture;
@@ -118,13 +137,14 @@ const initialState: ScienceState = {
     storageTubes: generateStorageTubes(),
     activeTube: { layers: [] },
     correctMixture: {
-      ownShip: generateFuelMixture(12345),
-      otherShip: generateFuelMixture(67890)
+      ownShip: generateFuelMixture(12345, 3), // Start with Alpha quadrant length
+      otherShip: generateFuelMixture(67890, 3)
     },
     lastChangeTime: 0,
     changeCount: 0,
     refuelCooldownUntil: 0,
-    dumpCooldownUntil: 0
+    dumpCooldownUntil: 0,
+    dumpAllCooldownUntil: 0
   },
   randomSeeds: {
     ownShip: 12345,
@@ -154,13 +174,13 @@ export const scienceSlice = createSlice({
       }
     },
     
-    transferFuel: (state, action: PayloadAction<number>) => {
-      const tubeIndex = action.payload;
+    transferFuel: (state, action: PayloadAction<{ tubeIndex: number, maxLayers: number }>) => {
+      const { tubeIndex, maxLayers } = action.payload;
       if (tubeIndex < 0 || tubeIndex >= state.fuelMixture.storageTubes.length) return;
       
       const tube = state.fuelMixture.storageTubes[tubeIndex];
       if (tube.layers.length === 0) return;
-      if (state.fuelMixture.activeTube.layers.length >= 5) return;
+      if (state.fuelMixture.activeTube.layers.length >= maxLayers) return;
       
       const fuel = tube.layers.pop()!;
       state.fuelMixture.activeTube.layers.push(fuel);
@@ -177,14 +197,25 @@ export const scienceSlice = createSlice({
       state.fuelMixture.dumpCooldownUntil = currentGameSeconds + cooldownDuration;
     },
     
-    checkAndProcessCorrectMixture: (state, action: PayloadAction<{ currentPlayer: 'Gobi' | 'Ben', currentGameSeconds: number }>) => {
-      const { currentPlayer } = action.payload;
+    dumpAllLayers: (state, action: PayloadAction<number>) => {
+      const currentGameSeconds = action.payload;
+      if (currentGameSeconds < state.fuelMixture.dumpAllCooldownUntil) return;
+      if (state.fuelMixture.activeTube.layers.length === 0) return;
+      
+      // Remove all layers
+      state.fuelMixture.activeTube.layers = [];
+      const cooldownDuration = calculateCooldownWithPenalty(DUMP_ALL_COOLDOWN_SECONDS);
+      state.fuelMixture.dumpAllCooldownUntil = currentGameSeconds + cooldownDuration;
+    },
+    
+    checkAndProcessCorrectMixture: (state, action: PayloadAction<{ currentPlayer: 'Gobi' | 'Ben', currentGameSeconds: number, requiredLength: number }>) => {
+      const { currentPlayer, requiredLength } = action.payload;
       const targetMixture = currentPlayer === 'Gobi' 
         ? state.fuelMixture.correctMixture.ownShip 
         : state.fuelMixture.correctMixture.otherShip;
       
       const activeLayers = state.fuelMixture.activeTube.layers;
-      if (activeLayers.length !== 5) return;
+      if (activeLayers.length !== requiredLength) return;
       
       const isCorrect = activeLayers.every((fuel, index) => fuel === targetMixture[index]);
       
@@ -213,8 +244,8 @@ export const scienceSlice = createSlice({
       state.fuelMixture.storageTubes = generateStorageTubes();
     },
     
-    updateCorrectMixtures: (state, action: PayloadAction<{ currentGameSeconds: number }>) => {
-      const { currentGameSeconds } = action.payload;
+    updateCorrectMixtures: (state, action: PayloadAction<{ currentGameSeconds: number, mixtureLength: number }>) => {
+      const { currentGameSeconds, mixtureLength } = action.payload;
       const timeSinceLastChange = currentGameSeconds - state.fuelMixture.lastChangeTime;
       
       // Change mixture every 20 seconds
@@ -223,8 +254,8 @@ export const scienceSlice = createSlice({
         state.randomSeeds.ownShip += numChanges * 1000;
         state.randomSeeds.otherShip += numChanges * 1000;
         
-        state.fuelMixture.correctMixture.ownShip = generateFuelMixture(state.randomSeeds.ownShip);
-        state.fuelMixture.correctMixture.otherShip = generateFuelMixture(state.randomSeeds.otherShip);
+        state.fuelMixture.correctMixture.ownShip = generateFuelMixture(state.randomSeeds.ownShip, mixtureLength);
+        state.fuelMixture.correctMixture.otherShip = generateFuelMixture(state.randomSeeds.otherShip, mixtureLength);
         
         state.fuelMixture.lastChangeTime = currentGameSeconds - (currentGameSeconds % 20);
         state.fuelMixture.changeCount += numChanges;
@@ -247,6 +278,7 @@ export const {
   recordPulseClick,
   transferFuel,
   dumpTopLayer,
+  dumpAllLayers,
   checkAndProcessCorrectMixture,
   startRefuel,
   completeRefuel,

@@ -1,7 +1,7 @@
 import { store } from "../store";
 import { spawnAsteroid } from "../store/stations/weaponsStore";
 import { updateSystemValue } from "../store/shipStore";
-import { updatePanelConnections } from "../store/stations/engineeringStore";
+import { updatePanelConnections, countIncorrectConnections } from "../store/stations/engineeringStore";
 import { updateNavigationValue } from "../store/stations/navigationStore";
 import { disasterEventBus } from "./DisasterEventBus";
 import { Quadrant, QUADRANT_BOUNDARIES, getQuadrant } from "../types";
@@ -92,16 +92,38 @@ export class DisasterEvents {
   static engineeringRewire(panelName?: string) {
     const state = store.getState();
     const engineering = state.engineering;
-    const availablePanels = Object.keys(engineering.panels);
+    const currentPlayer = state.game?.currentPlayer || 'Gobi';
+    
+    // Get panels that don't have errors (are correctly wired)
+    const availablePanels = Object.keys(engineering.panels).filter(panel => {
+      const currentPanel = engineering.panels[panel];
+      const correctPanel = engineering.correctState[currentPlayer][panel];
+      
+      if (!currentPanel || !correctPanel) return false;
+      
+      const incorrectCount = countIncorrectConnections(
+        currentPanel.connections,
+        correctPanel.connections
+      );
+      
+      // Only consider panels with no errors
+      return incorrectCount === 0;
+    });
 
-    if (availablePanels.length === 0) return;
+    // If no panels without errors, nothing happens
+    if (availablePanels.length === 0) {
+      console.log("🛡️ Engineering disaster avoided - all panels already have errors");
+      return null;
+    }
 
     const targetPanel =
-      panelName ||
-      availablePanels[Math.floor(Math.random() * availablePanels.length)];
+      panelName && availablePanels.includes(panelName) 
+        ? panelName
+        : availablePanels[Math.floor(Math.random() * availablePanels.length)];
+    
     const panel = engineering.panels[targetPanel];
 
-    if (!panel || panel.connections.length === 0) return;
+    if (!panel || panel.connections.length === 0) return null;
 
     // Pick a random connection
     const randomConnectionIndex = Math.floor(
@@ -223,27 +245,52 @@ export const DISASTER_TYPES: DisasterType[] = [
     minQuadrant: Quadrant.Beta,
     execute: () => {
       const state = store.getState();
-      const availablePanels = Object.keys(state.engineering.panels);
-
-      if (availablePanels.length >= 2) {
-        // Pick first panel and rewire it twice
-        const firstPanel =
-          availablePanels[Math.floor(Math.random() * availablePanels.length)];
-        DisasterEvents.engineeringRewire(firstPanel);
-        DisasterEvents.engineeringRewire(firstPanel);
-
-        // Pick different panel and rewire it once
-        const otherPanels = availablePanels.filter(
-          (name) => name !== firstPanel
+      const currentPlayer = state.game?.currentPlayer || 'Gobi';
+      
+      // Get panels that don't have errors
+      const availablePanels = Object.keys(state.engineering.panels).filter(panel => {
+        const currentPanel = state.engineering.panels[panel];
+        const correctPanel = state.engineering.correctState[currentPlayer][panel];
+        
+        if (!currentPanel || !correctPanel) return false;
+        
+        const incorrectCount = countIncorrectConnections(
+          currentPanel.connections,
+          correctPanel.connections
         );
-        if (otherPanels.length > 0) {
-          const secondPanel =
-            otherPanels[Math.floor(Math.random() * otherPanels.length)];
-          DisasterEvents.engineeringRewire(secondPanel);
+        
+        return incorrectCount === 0;
+      });
+
+      if (availablePanels.length === 0) {
+        console.log("🛡️ Major engineering disaster avoided - all panels already have errors");
+        return;
+      }
+
+      // Try to affect up to 2 different panels
+      const panelsAffected: string[] = [];
+      
+      // First panel gets 2 rewires if possible
+      const firstPanel = availablePanels[Math.floor(Math.random() * availablePanels.length)];
+      const firstResult = DisasterEvents.engineeringRewire(firstPanel);
+      if (firstResult) {
+        panelsAffected.push(firstResult);
+        // Try second rewire on same panel (it might now have an error after first rewire)
+        DisasterEvents.engineeringRewire(firstPanel);
+      }
+
+      // Try to affect a different panel if available
+      const otherAvailablePanels = availablePanels.filter(name => name !== firstPanel);
+      if (otherAvailablePanels.length > 0) {
+        const secondPanel = otherAvailablePanels[Math.floor(Math.random() * otherAvailablePanels.length)];
+        const secondResult = DisasterEvents.engineeringRewire(secondPanel);
+        if (secondResult) {
+          panelsAffected.push(secondResult);
         }
-      } else {
-        // Fallback to single panel if not enough panels
-        DisasterEvents.engineeringRewire();
+      }
+      
+      if (panelsAffected.length === 0) {
+        console.log("🛡️ Major engineering disaster had no effect - all targeted panels had errors");
       }
     },
   },

@@ -5,11 +5,13 @@ import {
   recordPulseClick,
   transferFuel,
   dumpTopLayer,
+  dumpAllLayers,
   checkAndProcessCorrectMixture,
   startRefuel,
   completeRefuel,
   updateCorrectMixtures,
   isPulseFrequencyCorrect,
+  getMixtureLength,
   FUEL_COLORS,
   FUEL_ADDED_PER_CORRECT_MIXTURE,
   PULSE_FREQUENCY_ENABLED,
@@ -76,7 +78,7 @@ const TestTubeComponent: React.FC<TestTubeProps> = ({
   isActive = false,
   label
 }) => {
-  const emptyLayers = maxLayers - layers.length;
+  const emptyLayers = Math.max(0, maxLayers - layers.length);
   
   return (
     <div className="flex flex-col items-center">
@@ -116,24 +118,31 @@ const FuelMixingGame: React.FC = () => {
   const dispatch = useDispatch();
   const scienceState = useSelector((state: RootState) => state.science);
   const gameClock = useSelector((state: RootState) => state.ship.gameClock);
+  const shipState = useSelector((state: RootState) => state.ship);
   const currentPlayer = useSelector((state: RootState) => state.game.currentPlayer);
   const [animatingTransfer, setAnimatingTransfer] = useState<{ from: number, to: 'active' } | null>(null);
+  
+  // Calculate distance traveled and required mixture length
+  const distanceTraveled = shipState.distanceToDestination.max - shipState.distanceToDestination.current;
+  const requiredMixtureLength = getMixtureLength(distanceTraveled);
   
   const currentGameSeconds = gameClock.minutes * 60 + gameClock.seconds;
   const isRefuelOnCooldown = currentGameSeconds < scienceState.fuelMixture.refuelCooldownUntil;
   const refuelCooldownRemaining = Math.max(0, scienceState.fuelMixture.refuelCooldownUntil - currentGameSeconds);
   const isDumpOnCooldown = currentGameSeconds < scienceState.fuelMixture.dumpCooldownUntil;
   const dumpCooldownRemaining = Math.max(0, scienceState.fuelMixture.dumpCooldownUntil - currentGameSeconds);
+  const isDumpAllOnCooldown = currentGameSeconds < scienceState.fuelMixture.dumpAllCooldownUntil;
+  const dumpAllCooldownRemaining = Math.max(0, scienceState.fuelMixture.dumpAllCooldownUntil - currentGameSeconds);
   
   // Calculate countdown to next mixture change
   const secondsUntilNextChange = 20 - (currentGameSeconds - scienceState.fuelMixture.lastChangeTime);
   
   useEffect(() => {
-    dispatch(updateCorrectMixtures({ currentGameSeconds }));
-  }, [currentGameSeconds, dispatch]);
+    dispatch(updateCorrectMixtures({ currentGameSeconds, mixtureLength: requiredMixtureLength }));
+  }, [currentGameSeconds, requiredMixtureLength, dispatch]);
   
   useEffect(() => {
-    if (scienceState.fuelMixture.activeTube.layers.length !== 5) return;
+    if (scienceState.fuelMixture.activeTube.layers.length !== requiredMixtureLength) return;
     
     const targetMixture = currentPlayer === 'Gobi' 
       ? scienceState.fuelMixture.correctMixture.ownShip 
@@ -146,7 +155,8 @@ const FuelMixingGame: React.FC = () => {
     if (isCorrect) {
       dispatch(checkAndProcessCorrectMixture({ 
         currentPlayer: currentPlayer || 'Gobi',
-        currentGameSeconds 
+        currentGameSeconds,
+        requiredLength: requiredMixtureLength
       }));
       
       dispatch(updateSystemValue({
@@ -155,15 +165,15 @@ const FuelMixingGame: React.FC = () => {
         isCurrentValue: true
       }));
     }
-  }, [scienceState.fuelMixture.activeTube.layers, scienceState.fuelMixture.correctMixture, currentPlayer, currentGameSeconds, dispatch]);
+  }, [scienceState.fuelMixture.activeTube.layers, scienceState.fuelMixture.correctMixture, currentPlayer, currentGameSeconds, requiredMixtureLength, dispatch]);
   
   const handleTubeClick = (index: number) => {
     if (animatingTransfer) return;
     if (scienceState.fuelMixture.storageTubes[index].layers.length === 0) return;
-    if (scienceState.fuelMixture.activeTube.layers.length >= 5) return;
+    if (scienceState.fuelMixture.activeTube.layers.length >= requiredMixtureLength) return;
     
     setAnimatingTransfer({ from: index, to: 'active' });
-    dispatch(transferFuel(index));
+    dispatch(transferFuel({ tubeIndex: index, maxLayers: requiredMixtureLength }));
     
     setTimeout(() => {
       setAnimatingTransfer(null);
@@ -173,6 +183,12 @@ const FuelMixingGame: React.FC = () => {
   const handleDump = () => {
     if (!isDumpOnCooldown && scienceState.fuelMixture.activeTube.layers.length > 0) {
       dispatch(dumpTopLayer(currentGameSeconds));
+    }
+  };
+  
+  const handleDumpAll = () => {
+    if (!isDumpAllOnCooldown && scienceState.fuelMixture.activeTube.layers.length > 0) {
+      dispatch(dumpAllLayers(currentGameSeconds));
     }
   };
   
@@ -192,8 +208,8 @@ const FuelMixingGame: React.FC = () => {
   }, [currentGameSeconds, scienceState.fuelMixture.refuelCooldownUntil, scienceState.fuelMixture.storageTubes, dispatch]);
   
   const correctMixture = currentPlayer === 'Gobi' 
-    ? scienceState.fuelMixture.correctMixture.otherShip
-    : scienceState.fuelMixture.correctMixture.ownShip;
+    ? scienceState.fuelMixture.correctMixture.otherShip.slice(0, requiredMixtureLength)
+    : scienceState.fuelMixture.correctMixture.ownShip.slice(0, requiredMixtureLength);
   
   return (
     <div className="space-y-6">
@@ -216,21 +232,34 @@ const FuelMixingGame: React.FC = () => {
             <h3 className="text-sm font-mono text-gray-400 mb-2 text-center">Active Mixture</h3>
             <TestTubeComponent
               layers={scienceState.fuelMixture.activeTube.layers}
+              maxLayers={requiredMixtureLength}
               isActive={true}
             />
           </div>
           
-          <div className="flex flex-col space-y-2">
+          <div className="flex flex-col justify-end space-y-2">
             <button
               onClick={handleDump}
               disabled={isDumpOnCooldown || scienceState.fuelMixture.activeTube.layers.length === 0}
               className={`px-4 py-2 rounded font-mono text-sm ${
                 isDumpOnCooldown || scienceState.fuelMixture.activeTube.layers.length === 0
                   ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  : 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-orange-600 hover:bg-orange-700 text-white'
               }`}
             >
               {isDumpOnCooldown ? `Dump (${dumpCooldownRemaining}s)` : 'Dump'}
+            </button>
+            
+            <button
+              onClick={handleDumpAll}
+              disabled={isDumpAllOnCooldown || scienceState.fuelMixture.activeTube.layers.length === 0}
+              className={`px-4 py-2 rounded font-mono text-sm ${
+                isDumpAllOnCooldown || scienceState.fuelMixture.activeTube.layers.length === 0
+                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                  : 'bg-red-600 hover:bg-red-700 text-white'
+              }`}
+            >
+              {isDumpAllOnCooldown ? `Dump all (${dumpAllCooldownRemaining}s)` : 'Dump all'}
             </button>
             
             <button
@@ -242,17 +271,18 @@ const FuelMixingGame: React.FC = () => {
                   : 'bg-blue-600 hover:bg-blue-700 text-white'
               }`}
             >
-              {isRefuelOnCooldown ? `Refuel (${refuelCooldownRemaining}s)` : 'Refuel'}
+              {isRefuelOnCooldown ? `Restock (${refuelCooldownRemaining}s)` : 'Restock'}
             </button>
           </div>
         </div>
         
         <div>
           <h3 className="text-sm font-mono text-gray-400 mb-2 text-center">
-            {currentPlayer === 'Gobi' ? "Ben's" : "Gobi's"} Target
+            {currentPlayer === 'Gobi' ? "Ben's" : "Gobi's"} Target ({requiredMixtureLength} fuels)
           </h3>
           <TestTubeComponent
             layers={correctMixture}
+            maxLayers={requiredMixtureLength}
             isActive={false}
           />
           <div className="text-center mt-2">
