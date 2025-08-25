@@ -1,4 +1,4 @@
-import { Alert, SystemEffect, ShipState } from '../types';
+import { Alert, SystemEffect, ShipState, Players } from '../types';
 import { store } from '../store';
 import { updateSystemValue } from '../store/shipStore';
 
@@ -7,7 +7,7 @@ export class AlertSystem {
     name: string,
     description: string,
     severity: 'Warning' | 'Danger' | 'Critical',
-    owner: 'Gobi' | 'Ben',
+    owner: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO,
     systemEffects: SystemEffect[] = [],
     type: 'manual' | 'automatic' = 'manual'
   ): Alert {

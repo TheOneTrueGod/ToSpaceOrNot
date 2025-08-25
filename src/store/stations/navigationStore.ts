@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Quadrant, getQuadrant } from "../../types";
+import { Quadrant, getQuadrant, Players } from "../../types";
 
 export interface NavigationValues {
   pitch: number;
@@ -89,11 +89,11 @@ export const navigationSlice = createSlice({
     },
     resetNavigation: (
       state,
-      action: PayloadAction<{ player?: "Gobi" | "Ben" }>
+      action: PayloadAction<{ player?: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO }>
     ) => {
-      const player = action.payload?.player || "Gobi";
+      const player = action.payload?.player || Players.PLAYER_ONE;
       state.current =
-        player === "Gobi"
+        player === Players.PLAYER_ONE
           ? { ...state.correctValues.gobi }
           : { ...state.correctValues.ben };
     },

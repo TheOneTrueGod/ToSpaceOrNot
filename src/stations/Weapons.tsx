@@ -13,6 +13,7 @@ import {
 } from '../store/stations/weaponsStore';
 import { updateSystemValue } from '../store/shipStore';
 import { getWeaponsPenaltyMultiplier } from '../store/stations/engineeringStore';
+import { Players } from '../types';
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 400;
@@ -29,7 +30,7 @@ export const Weapons: React.FC = () => {
   const engineeringState = useSelector((s: RootState) => s.engineering);
   
   const currentPlayer = useSelector((s: RootState) => s.game.currentPlayer);
-  const weaponsPenalty = getWeaponsPenaltyMultiplier(engineeringState, currentPlayer || 'Gobi');
+  const weaponsPenalty = getWeaponsPenaltyMultiplier(engineeringState, currentPlayer || Players.PLAYER_ONE);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../store";
+import { Players } from "../types";
 import {
   updatePanelConnections,
   toggleSchematicView,
@@ -30,11 +31,11 @@ const getPanelPenaltyInfo = (
   engineeringState: {
     panels: { [key: string]: PanelState };
     correctState: {
-      Gobi: { [key: string]: PanelState };
-      Ben: { [key: string]: PanelState };
+      [Players.PLAYER_ONE]: { [key: string]: PanelState };
+      [Players.PLAYER_TWO]: { [key: string]: PanelState };
     };
   },
-  currentPlayer: "Gobi" | "Ben"
+  currentPlayer: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO
 ) => {
   const currentPanel = engineeringState.panels[panelName];
   const correctPanel = engineeringState.correctState[currentPlayer][panelName];
@@ -63,7 +64,7 @@ export const Engineering: React.FC = () => {
   );
 
   // Get the other player's name
-  const otherPlayer = currentPlayer === "Gobi" ? "Ben" : "Gobi";
+  const otherPlayer = currentPlayer === Players.PLAYER_ONE ? Players.PLAYER_TWO : Players.PLAYER_ONE;
 
   const [openPanel, setOpenPanel] = useState<string | null>(null);
   const [dragState, setDragState] = useState<{

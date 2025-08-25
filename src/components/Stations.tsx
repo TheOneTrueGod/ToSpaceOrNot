@@ -2,15 +2,15 @@ import React, { useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../store";
 import { setActiveStation } from "../store/stationStore";
-import { StationType } from "../types";
+import { StationType, Players } from "../types";
 import { Engineering } from "../stations/Engineering";
 import { Weapons } from "../stations/Weapons";
 import { Navigation } from "../stations/Navigation";
 import { Science } from "../stations/Science";
 
 /*const playerStations: Record<Player, StationType[]> = {
-  'Gobi': ['Engineering', 'Weapons'],
-  'Ben': ['Navigation', 'Science'],
+  [Players.PLAYER_ONE]: ['Engineering', 'Weapons'],
+  [Players.PLAYER_TWO]: ['Navigation', 'Science'],
 };*/
 const allStations: StationType[] = [
   "Navigation",

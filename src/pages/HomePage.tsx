@@ -4,7 +4,7 @@ import { setCurrentPlayer, setCurrentPage } from '../store/gameStore';
 import { resetNavigation } from '../store/stations/navigationStore';
 import { initializeForPlayer } from '../store/stations/engineeringStore';
 import { RocketAnimation } from '../components/RocketAnimation';
-import { Player } from '../types';
+import { Player, Players } from '../types';
 
 export const HomePage: React.FC = () => {
   const dispatch = useDispatch();
@@ -38,7 +38,7 @@ export const HomePage: React.FC = () => {
       {/* Player Selection */}
       <div className="flex space-x-8">
         <button
-          onClick={() => handlePlayerSelect('Gobi')}
+          onClick={() => handlePlayerSelect(Players.PLAYER_ONE)}
           className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 
                    border border-blue-500 rounded-lg text-white font-semibold text-xl
                    shadow-lg hover:shadow-blue-500/25 transition-all duration-300
@@ -52,7 +52,7 @@ export const HomePage: React.FC = () => {
         </button>
 
         <button
-          onClick={() => handlePlayerSelect('Ben')}
+          onClick={() => handlePlayerSelect(Players.PLAYER_TWO)}
           className="px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 
                    border border-purple-500 rounded-lg text-white font-semibold text-xl
                    shadow-lg hover:shadow-purple-500/25 transition-all duration-300

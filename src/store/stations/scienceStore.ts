@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { store } from '../index';
 import { getFuelPenaltyMultiplier } from './engineeringStore';
-import { Quadrant, getQuadrant } from '../../types';
+import { Quadrant, getQuadrant, Players } from '../../types';
 
 export type FuelType = 'Hydrogen' | 'Xenon' | 'Plutonium' | 'Helium';
 
@@ -75,7 +75,7 @@ const calculateCooldownWithPenalty = (baseCooldown: number): number => {
   try {
     const currentState = store.getState();
     const engineeringState = currentState.engineering;
-    const currentPlayer = currentState.game?.currentPlayer || 'Gobi';
+    const currentPlayer = currentState.game?.currentPlayer || Players.PLAYER_ONE;
     
     if (engineeringState) {
       const fuelPenalty = getFuelPenaltyMultiplier(engineeringState, currentPlayer);
@@ -216,15 +216,15 @@ export const scienceSlice = createSlice({
       state.fuelMixture.dumpAllCooldownUntil = currentGameSeconds + cooldownDuration;
     },
     
-    checkAndProcessCorrectMixture: (state, action: PayloadAction<{ currentPlayer: 'Gobi' | 'Ben', currentGameSeconds: number, requiredLength: number }>) => {
+    checkAndProcessCorrectMixture: (state, action: PayloadAction<{ currentPlayer: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO, currentGameSeconds: number, requiredLength: number }>) => {
       const { currentPlayer, requiredLength } = action.payload;
       
       // Get both current and previous target mixtures
-      const currentTargetMixture = currentPlayer === 'Gobi' 
+      const currentTargetMixture = currentPlayer === Players.PLAYER_ONE 
         ? state.fuelMixture.correctMixture.ownShip 
         : state.fuelMixture.correctMixture.otherShip;
       
-      const previousTargetMixture = currentPlayer === 'Gobi'
+      const previousTargetMixture = currentPlayer === Players.PLAYER_ONE
         ? state.fuelMixture.previousCorrectMixture.ownShip
         : state.fuelMixture.previousCorrectMixture.otherShip;
       

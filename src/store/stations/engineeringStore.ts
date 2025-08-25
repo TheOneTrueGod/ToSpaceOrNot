@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { Players } from "../../types";
 
 interface WireConnection {
   from: { type: "input" | "node" | "output"; index: number };
@@ -19,10 +20,10 @@ export interface EngineeringPanels {
 export interface EngineeringState {
   panels: EngineeringPanels;
   correctState: {
-    Gobi: {
+    [Players.PLAYER_ONE]: {
       [panelName: string]: PanelState;
     };
-    Ben: {
+    [Players.PLAYER_TWO]: {
       [panelName: string]: PanelState;
     };
   };
@@ -81,7 +82,7 @@ export const PANEL_NAMES = pickRandomUnique(POTENTIAL_PANEL_NAMES, 4);
 
 export const generatePanelState = (
   panelId: string,
-  player: "Gobi" | "Ben"
+  player: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO
 ): PanelState["connections"] => {
   const connections: WireConnection[] = [];
 
@@ -89,9 +90,9 @@ export const generatePanelState = (
 
   // Select permutations based on player
   const inputPermutations =
-    player === "Gobi" ? GOBI_INPUT_PERMUTATIONS : BEN_INPUT_PERMUTATIONS;
+    player === Players.PLAYER_ONE ? GOBI_INPUT_PERMUTATIONS : BEN_INPUT_PERMUTATIONS;
   const outputPermutations =
-    player === "Gobi" ? GOBI_OUTPUT_PERMUTATIONS : BEN_OUTPUT_PERMUTATIONS;
+    player === Players.PLAYER_ONE ? GOBI_OUTPUT_PERMUTATIONS : BEN_OUTPUT_PERMUTATIONS;
 
   const inputPermutation =
     inputPermutations[
@@ -138,7 +139,7 @@ export const PENALTY_CONFIG = {
 };
 
 export const generateEngineeringState = (
-  currentPlayer?: "Gobi" | "Ben"
+  currentPlayer?: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO
 ): EngineeringState => {
   // Generate different correct states for each player
   const gobiCorrectState: { [key: string]: PanelState } = {};
@@ -146,19 +147,19 @@ export const generateEngineeringState = (
 
   PANEL_NAMES.forEach((panelName) => {
     gobiCorrectState[panelName] = {
-      connections: generatePanelState(panelName, "Gobi"),
+      connections: generatePanelState(panelName, Players.PLAYER_ONE),
     };
     benCorrectState[panelName] = {
-      connections: generatePanelState(panelName, "Ben"),
+      connections: generatePanelState(panelName, Players.PLAYER_TWO),
     };
   });
 
   // Initialize panels to match the current player's correct state
-  // If no player specified (initial load), default to Gobi's state
+  // If no player specified (initial load), default to Player One's state
   const panels: { [key: string]: PanelState } = {};
-  const playerToUse = currentPlayer || "Gobi";
+  const playerToUse = currentPlayer || Players.PLAYER_ONE;
   const correctStateToUse =
-    playerToUse === "Gobi" ? gobiCorrectState : benCorrectState;
+    playerToUse === Players.PLAYER_ONE ? gobiCorrectState : benCorrectState;
 
   PANEL_NAMES.forEach((panelName) => {
     // Deep copy the correct state for this player
@@ -170,8 +171,8 @@ export const generateEngineeringState = (
   return {
     panels,
     correctState: {
-      Gobi: gobiCorrectState,
-      Ben: benCorrectState,
+      [Players.PLAYER_ONE]: gobiCorrectState,
+      [Players.PLAYER_TWO]: benCorrectState,
     },
     panelOrder: [...PANEL_NAMES].sort(() => Math.random() - 0.5),
     isViewingSchematic: false,
@@ -217,7 +218,7 @@ export const getPenaltyLevel = (
 export const getPenaltyMultiplier = (
   panelName: string,
   engineeringState: EngineeringState,
-  currentPlayer: "Gobi" | "Ben"
+  currentPlayer: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO
 ): number => {
   const currentPanel = engineeringState.panels[panelName];
   const correctPanel = engineeringState.correctState[currentPlayer][panelName];
@@ -246,7 +247,7 @@ export const getPenaltyMultiplier = (
 // Get penalty multiplier for specific systems
 export const getPowerPenaltyMultiplier = (
   engineeringState: EngineeringState,
-  currentPlayer: "Gobi" | "Ben"
+  currentPlayer: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO
 ): number => {
   const powerPanel = Object.keys(PANEL_SYSTEM_MAPPING).find(
     (key) => PANEL_SYSTEM_MAPPING[key] === "Power"
@@ -258,7 +259,7 @@ export const getPowerPenaltyMultiplier = (
 
 export const getThrustPenaltyMultiplier = (
   engineeringState: EngineeringState,
-  currentPlayer: "Gobi" | "Ben"
+  currentPlayer: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO
 ): number => {
   const thrustPanel = Object.keys(PANEL_SYSTEM_MAPPING).find(
     (key) => PANEL_SYSTEM_MAPPING[key] === "Thrust"
@@ -270,7 +271,7 @@ export const getThrustPenaltyMultiplier = (
 
 export const getFuelPenaltyMultiplier = (
   engineeringState: EngineeringState,
-  currentPlayer: "Gobi" | "Ben"
+  currentPlayer: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO
 ): number => {
   const fuelPanel = Object.keys(PANEL_SYSTEM_MAPPING).find(
     (key) => PANEL_SYSTEM_MAPPING[key] === "Fuel"
@@ -282,7 +283,7 @@ export const getFuelPenaltyMultiplier = (
 
 export const getWeaponsPenaltyMultiplier = (
   engineeringState: EngineeringState,
-  currentPlayer: "Gobi" | "Ben"
+  currentPlayer: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO
 ): number => {
   const weaponsPanel = Object.keys(PANEL_SYSTEM_MAPPING).find(
     (key) => PANEL_SYSTEM_MAPPING[key] === "Weapons"
@@ -304,10 +305,10 @@ export const engineeringSlice = createSlice({
         panelName: string;
         connections: WireConnection[];
         source?: RewireSource;
-        currentPlayer?: "Gobi" | "Ben";
+        currentPlayer?: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO;
       }>
     ) => {
-      const { panelName, connections, source, currentPlayer = "Gobi" } = action.payload;
+      const { panelName, connections, source, currentPlayer = Players.PLAYER_ONE } = action.payload;
       if (state.panels[panelName]) {
         const currentPanel = state.panels[panelName];
         const correctPanel = state.correctState[currentPlayer][panelName];
@@ -333,7 +334,7 @@ export const engineeringSlice = createSlice({
     },
     resetEngineering: (
       state,
-      action: PayloadAction<{ player?: "Gobi" | "Ben" } | undefined>
+      action: PayloadAction<{ player?: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO } | undefined>
     ) => {
       const player = action?.payload?.player;
       const newState = generateEngineeringState(player);
@@ -345,7 +346,7 @@ export const engineeringSlice = createSlice({
     toggleSchematicView: (state) => {
       state.isViewingSchematic = !state.isViewingSchematic;
     },
-    initializeForPlayer: (state, action: PayloadAction<"Gobi" | "Ben">) => {
+    initializeForPlayer: (state, action: PayloadAction<typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO>) => {
       const player = action.payload;
       // Set panels to match the correct state for this player
       PANEL_NAMES.forEach((panelName) => {

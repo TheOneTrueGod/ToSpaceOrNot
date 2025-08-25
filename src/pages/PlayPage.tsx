@@ -5,6 +5,7 @@ import { StatusMonitor } from "../components/StatusMonitor";
 import { ShipManual } from "../components/ShipManual";
 import { Stations } from "../components/Stations";
 import { dungeonMaster } from "../systems/DungeonMaster";
+import { Players } from "../types";
 
 export const PlayPage: React.FC = () => {
   const currentPlayer = useSelector(
@@ -52,7 +53,7 @@ export const PlayPage: React.FC = () => {
           Player:{" "}
           <span
             className={
-              currentPlayer === "Gobi" ? "text-blue-400" : "text-purple-400"
+              currentPlayer === Players.PLAYER_ONE ? "text-blue-400" : "text-purple-400"
             }
           >
             {currentPlayer}

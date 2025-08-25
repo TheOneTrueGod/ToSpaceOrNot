@@ -1,4 +1,5 @@
 import { store } from "../store";
+import { Players } from "../types";
 import {
   advanceTime,
   addAlert,
@@ -44,7 +45,7 @@ export class DungeonMaster {
     let speed = 2; // Base speed
 
     // Check navigation alignment - need current player to determine correct values
-    const currentPlayer = state.game?.currentPlayer || 'Gobi';
+    const currentPlayer = state.game?.currentPlayer || Players.PLAYER_ONE;
     const navErrors = this.countNavigationErrors(navigationState, currentPlayer);
     if (navErrors === 1) {
       speed -= 1; // One navigation number incorrect
@@ -73,7 +74,7 @@ export class DungeonMaster {
     const tolerance = 0.1; // Small tolerance for floating point comparison
     
     // Get the correct values for the current player
-    const correctValues = currentPlayer === 'Gobi' 
+    const correctValues = currentPlayer === Players.PLAYER_ONE 
       ? navigationState.correctValues.gobi 
       : navigationState.correctValues.ben;
 
@@ -106,7 +107,7 @@ export class DungeonMaster {
 
     if (!engineeringState) return;
 
-    const currentPlayer = state.game?.currentPlayer || 'Gobi';
+    const currentPlayer = state.game?.currentPlayer || Players.PLAYER_ONE;
     const malfunctionSystems = [
       {
         name: "Weapons",
@@ -129,7 +130,7 @@ export class DungeonMaster {
           alertName,
           `${system.name} system experiencing significant malfunctions due to engineering panel damage.`,
           "Danger",
-          "Gobi", // Default owner, could be made configurable
+          Players.PLAYER_ONE, // Default owner, could be made configurable
           [],
           "automatic"
         );
@@ -185,7 +186,7 @@ export class DungeonMaster {
           alertName,
           `${stationName} panel has incorrect wiring connections. Check panel for errors.`,
           "Warning",
-          "Gobi", // Default owner, could be made configurable
+          Players.PLAYER_ONE, // Default owner, could be made configurable
           [],
           "automatic"
         );
@@ -226,7 +227,7 @@ export class DungeonMaster {
     const engineeringState = currentState.engineering;
     const scienceState = currentState.science;
 
-    const currentPlayer = currentState.game?.currentPlayer || 'Gobi';
+    const currentPlayer = currentState.game?.currentPlayer || Players.PLAYER_ONE;
     const engineeringPenalty = engineeringState
       ? getPowerPenaltyMultiplier(engineeringState, currentPlayer)
       : 1;
@@ -290,7 +291,7 @@ export class DungeonMaster {
       let fuelConsumption = baselineFuelConsumption;
 
       if (engineeringState) {
-        const currentPlayer = currentShipState.gameClock ? store.getState().game?.currentPlayer || 'Gobi' : 'Gobi';
+        const currentPlayer = currentShipState.gameClock ? store.getState().game?.currentPlayer || Players.PLAYER_ONE : Players.PLAYER_ONE;
         const fuelPenalty = getFuelPenaltyMultiplier(engineeringState, currentPlayer);
         fuelConsumption *= fuelPenalty;
       }
@@ -351,7 +352,7 @@ export class DungeonMaster {
         "Hull Stress Warning",
         "Minor hull stress detected in sector 7. Monitor structural integrity.",
         "Warning",
-        "Gobi",
+        Players.PLAYER_ONE,
         [{ system: "hullDamage" as const, changePerInterval: 1 }],
         "manual"
       );
@@ -365,7 +366,7 @@ export class DungeonMaster {
         "Oxygen System Critical",
         "Critical failure in oxygen recycling system. Immediate attention required.",
         "Critical",
-        "Ben",
+        Players.PLAYER_TWO,
         [{ system: "oxygenLevels" as const, changePerInterval: -2 }],
         "manual"
       );
@@ -379,7 +380,7 @@ export class DungeonMaster {
         "Fuel Leak Detected",
         "Dangerous fuel leak in main tank. Containment systems engaged.",
         "Danger",
-        "Gobi",
+        Players.PLAYER_ONE,
         [{ system: "fuelLevels" as const, changePerInterval: -1.5 }],
         "manual"
       );

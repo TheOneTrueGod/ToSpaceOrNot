@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ShipState, Alert, Gauge, Quadrant, QUADRANT_BOUNDARIES } from "../types";
+import { ShipState, Alert, Gauge, Quadrant, QUADRANT_BOUNDARIES, Players } from "../types";
 import { Asteroid } from "./stations/weaponsStore";
 
 const isGauge = (value: unknown): value is Gauge => {
@@ -67,7 +67,7 @@ const shipSlice = createSlice({
             description:
               "Power generation is significantly below expected levels. Check engineering systems.",
             severity: "Warning",
-            owner: "Gobi",
+            owner: Players.PLAYER_ONE,
             systemEffects: [],
             isActive: true,
             type: "automatic",

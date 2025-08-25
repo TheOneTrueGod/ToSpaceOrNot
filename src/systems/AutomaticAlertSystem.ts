@@ -1,4 +1,4 @@
-import { Alert } from '../types';
+import { Alert, Players } from '../types';
 import { ShipState } from '../types';
 import { WeaponsState } from '../store/stations/weaponsStore';
 import { NavigationState } from '../store/stations/navigationStore';
@@ -27,7 +27,7 @@ export class AutomaticAlertSystem {
       timestamp: currentTime,
       description,
       severity,
-      owner: 'Gobi', // Default owner, could be made dynamic
+      owner: Players.PLAYER_ONE, // Default owner, could be made dynamic
       systemEffects: [],
       isActive: true,
       type: 'automatic'

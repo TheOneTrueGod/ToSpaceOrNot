@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
+import { Players } from "../types";
 import {
   recordPulseClick,
   transferFuel,
@@ -192,12 +193,12 @@ const FuelMixingGame: React.FC = () => {
 
     // Get both current and previous target mixtures for forgiveness
     const currentTargetMixture =
-      currentPlayer === "Gobi"
+      currentPlayer === Players.PLAYER_ONE
         ? scienceState.fuelMixture.correctMixture.ownShip
         : scienceState.fuelMixture.correctMixture.otherShip;
 
     const previousTargetMixture =
-      currentPlayer === "Gobi"
+      currentPlayer === Players.PLAYER_ONE
         ? scienceState.fuelMixture.previousCorrectMixture.ownShip
         : scienceState.fuelMixture.previousCorrectMixture.otherShip;
 
@@ -212,7 +213,7 @@ const FuelMixingGame: React.FC = () => {
     if (matchesCurrent || matchesPrevious) {
       dispatch(
         checkAndProcessCorrectMixture({
-          currentPlayer: currentPlayer || "Gobi",
+          currentPlayer: currentPlayer || Players.PLAYER_ONE,
           currentGameSeconds,
           requiredLength: requiredMixtureLength,
         })
@@ -298,7 +299,7 @@ const FuelMixingGame: React.FC = () => {
   ]);
 
   const correctMixture =
-    currentPlayer === "Gobi"
+    currentPlayer === Players.PLAYER_ONE
       ? scienceState.fuelMixture.correctMixture.otherShip.slice(
           0,
           requiredMixtureLength
@@ -309,7 +310,7 @@ const FuelMixingGame: React.FC = () => {
         );
 
   const previousCorrectMixture =
-    currentPlayer === "Gobi"
+    currentPlayer === Players.PLAYER_ONE
       ? scienceState.fuelMixture.previousCorrectMixture.otherShip.slice(
           0,
           requiredMixtureLength
@@ -412,7 +413,7 @@ const FuelMixingGame: React.FC = () => {
 
         <div>
           <h3 className="text-sm font-mono text-gray-400 mb-2 text-center">
-            {currentPlayer === "Gobi" ? "Ben's" : "Gobi's"} Target
+            {currentPlayer === Players.PLAYER_ONE ? "Ben's" : "Gobi's"} Target
           </h3>
           <div className="flex items-center gap-2">
             <div>

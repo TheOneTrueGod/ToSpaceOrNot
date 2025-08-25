@@ -18,7 +18,7 @@ export interface Alert {
   timestamp: { minutes: number; seconds: number };
   description: string;
   severity: 'Warning' | 'Danger' | 'Critical';
-  owner: 'Gobi' | 'Ben';
+  owner: Player;
   systemEffects: SystemEffect[];
   isActive: boolean;
   type: 'manual' | 'automatic'; // Distinguishes DM-created vs status effect alerts
@@ -31,7 +31,13 @@ export interface SystemEffect {
   minValue?: number;
 }
 
-export type Player = 'Gobi' | 'Ben';
+// Player constants
+export const Players = {
+  PLAYER_ONE: 'Gobi' as const,
+  PLAYER_TWO: 'Ben' as const,
+} as const;
+
+export type Player = typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO;
 
 export type StationType = 'Engineering' | 'Navigation' | 'Weapons' | 'Science';
 

@@ -1,4 +1,5 @@
 import { store } from "../store";
+import { Players } from "../types";
 import { spawnAsteroid } from "../store/stations/weaponsStore";
 import { updateSystemValue } from "../store/shipStore";
 import {
@@ -125,7 +126,7 @@ export class DisasterEvents {
   static engineeringRewire(panelName?: string, source: RewireSource = "minor") {
     const state = store.getState();
     const engineering = state.engineering;
-    const currentPlayer = state.game?.currentPlayer || "Gobi";
+    const currentPlayer = state.game?.currentPlayer || Players.PLAYER_ONE;
 
     // Get panels that can be rewired based on override rules
     const availablePanels = Object.keys(engineering.panels).filter((panel) => {
