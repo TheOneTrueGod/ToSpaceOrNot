@@ -29,6 +29,10 @@ export interface ScienceState {
       ownShip: FuelType[];
       otherShip: FuelType[];
     };
+    previousCorrectMixture: {  // Store the previous correct mixture for forgiveness
+      ownShip: FuelType[];
+      otherShip: FuelType[];
+    };
     lastChangeTime: number; // in game seconds
     changeCount: number;
     refuelCooldownUntil: number;
@@ -140,6 +144,10 @@ const initialState: ScienceState = {
       ownShip: generateFuelMixture(12345, 3), // Start with Alpha quadrant length
       otherShip: generateFuelMixture(67890, 3)
     },
+    previousCorrectMixture: {
+      ownShip: generateFuelMixture(12345, 3), // Initially same as current
+      otherShip: generateFuelMixture(67890, 3)
+    },
     lastChangeTime: 0,
     changeCount: 0,
     refuelCooldownUntil: 0,
@@ -210,16 +218,24 @@ export const scienceSlice = createSlice({
     
     checkAndProcessCorrectMixture: (state, action: PayloadAction<{ currentPlayer: 'Gobi' | 'Ben', currentGameSeconds: number, requiredLength: number }>) => {
       const { currentPlayer, requiredLength } = action.payload;
-      const targetMixture = currentPlayer === 'Gobi' 
+      
+      // Get both current and previous target mixtures
+      const currentTargetMixture = currentPlayer === 'Gobi' 
         ? state.fuelMixture.correctMixture.ownShip 
         : state.fuelMixture.correctMixture.otherShip;
+      
+      const previousTargetMixture = currentPlayer === 'Gobi'
+        ? state.fuelMixture.previousCorrectMixture.ownShip
+        : state.fuelMixture.previousCorrectMixture.otherShip;
       
       const activeLayers = state.fuelMixture.activeTube.layers;
       if (activeLayers.length !== requiredLength) return;
       
-      const isCorrect = activeLayers.every((fuel, index) => fuel === targetMixture[index]);
+      // Check if it matches either current or previous mixture (more forgiving)
+      const matchesCurrent = activeLayers.every((fuel, index) => fuel === currentTargetMixture[index]);
+      const matchesPrevious = activeLayers.every((fuel, index) => fuel === previousTargetMixture[index]);
       
-      if (isCorrect) {
+      if (matchesCurrent || matchesPrevious) {
         state.fuelMixture.activeTube.layers = [];
       }
     },
@@ -251,6 +267,12 @@ export const scienceSlice = createSlice({
       // Change mixture every 20 seconds
       if (timeSinceLastChange >= 20) {
         const numChanges = Math.floor(timeSinceLastChange / 20);
+        
+        // Store the current mixture as the previous before generating new ones
+        state.fuelMixture.previousCorrectMixture.ownShip = [...state.fuelMixture.correctMixture.ownShip];
+        state.fuelMixture.previousCorrectMixture.otherShip = [...state.fuelMixture.correctMixture.otherShip];
+        
+        // Generate new mixtures
         state.randomSeeds.ownShip += numChanges * 1000;
         state.randomSeeds.otherShip += numChanges * 1000;
         

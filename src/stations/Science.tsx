@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../store';
+import React, { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../store";
 import {
   recordPulseClick,
   transferFuel,
@@ -15,50 +15,54 @@ import {
   FUEL_COLORS,
   FUEL_ADDED_PER_CORRECT_MIXTURE,
   PULSE_FREQUENCY_ENABLED,
-  FuelType
-} from '../store/stations/scienceStore';
-import { updateSystemValue } from '../store/shipStore';
+  FuelType,
+} from "../store/stations/scienceStore";
+import { updateSystemValue } from "../store/shipStore";
 
 const PulseButton: React.FC = () => {
   const dispatch = useDispatch();
   const scienceState = useSelector((state: RootState) => state.science);
   const [isPulsing, setIsPulsing] = useState(false);
   const pulseIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const isCorrect = isPulseFrequencyCorrect(scienceState);
-  
+
   useEffect(() => {
     if (pulseIntervalRef.current) {
       clearInterval(pulseIntervalRef.current);
     }
-    
+
     pulseIntervalRef.current = setInterval(() => {
       setIsPulsing(true);
       setTimeout(() => setIsPulsing(false), 200);
     }, scienceState.pulseFrequency.current);
-    
+
     return () => {
       if (pulseIntervalRef.current) {
         clearInterval(pulseIntervalRef.current);
       }
     };
   }, [scienceState.pulseFrequency.current]);
-  
+
   const handleClick = () => {
     dispatch(recordPulseClick(Date.now()));
   };
-  
+
   return (
     <div className="flex items-center space-x-4">
       <button
         onClick={handleClick}
         className={`w-24 h-24 rounded-full bg-teal-500 transition-all duration-200 ${
-          isPulsing ? 'shadow-[0_0_30px_10px_rgba(20,184,166,0.8)]' : 'shadow-[0_0_15px_5px_rgba(20,184,166,0.4)]'
+          isPulsing
+            ? "shadow-[0_0_30px_10px_rgba(20,184,166,0.8)]"
+            : "shadow-[0_0_15px_5px_rgba(20,184,166,0.4)]"
         } hover:shadow-[0_0_25px_8px_rgba(20,184,166,0.6)]`}
       />
-      <div className={`w-4 h-4 rounded-full ${
-        isCorrect ? 'bg-green-500' : 'bg-red-500 animate-pulse'
-      }`} />
+      <div
+        className={`w-4 h-4 rounded-full ${
+          isCorrect ? "bg-green-500" : "bg-red-500 animate-pulse"
+        }`}
+      />
     </div>
   );
 };
@@ -69,6 +73,7 @@ interface TestTubeProps {
   onClick?: () => void;
   isActive?: boolean;
   label?: string;
+  scale?: number;
 }
 
 const TestTubeComponent: React.FC<TestTubeProps> = ({
@@ -76,10 +81,14 @@ const TestTubeComponent: React.FC<TestTubeProps> = ({
   maxLayers = 5,
   onClick,
   isActive = false,
-  label
+  label,
+  scale = 1,
 }) => {
   const emptyLayers = Math.max(0, maxLayers - layers.length);
-  
+  const width = 48 * scale;
+  const height = 160 * scale;
+  const layerHeight = maxLayers > 0 ? height / maxLayers : 32 * scale;
+
   return (
     <div className="flex flex-col items-center">
       {label && (
@@ -87,25 +96,29 @@ const TestTubeComponent: React.FC<TestTubeProps> = ({
       )}
       <div
         onClick={onClick}
-        className={`relative w-12 h-40 bg-gray-700 border-2 ${
-          isActive ? 'border-teal-400' : 'border-gray-500'
+        className={`relative bg-gray-700 border-2 ${
+          isActive ? "border-teal-400" : "border-gray-500"
         } rounded-b-full overflow-hidden ${
-          onClick ? 'cursor-pointer hover:border-gray-400' : ''
+          onClick ? "cursor-pointer hover:border-gray-400" : ""
         }`}
+        style={{ width: `${width}px`, height: `${height}px` }}
       >
         <div className="absolute bottom-0 w-full flex flex-col-reverse">
           {layers.map((fuel, index) => (
             <div
               key={index}
-              className="w-full h-8 border-t border-gray-600"
-              style={{ backgroundColor: FUEL_COLORS[fuel] }}
+              className="w-full border-t border-gray-600"
+              style={{
+                backgroundColor: FUEL_COLORS[fuel],
+                height: `${layerHeight}px`,
+              }}
             />
           ))}
         </div>
         {emptyLayers > 0 && (
           <div className="absolute top-0 w-full">
             {Array.from({ length: emptyLayers }).map((_, index) => (
-              <div key={index} className="w-full h-8" />
+              <div key={index} style={{ height: `${layerHeight}px` }} />
             ))}
           </div>
         )}
@@ -119,103 +132,196 @@ const FuelMixingGame: React.FC = () => {
   const scienceState = useSelector((state: RootState) => state.science);
   const gameClock = useSelector((state: RootState) => state.ship.gameClock);
   const shipState = useSelector((state: RootState) => state.ship);
-  const currentPlayer = useSelector((state: RootState) => state.game.currentPlayer);
-  const [animatingTransfer, setAnimatingTransfer] = useState<{ from: number, to: 'active' } | null>(null);
-  
+  const currentPlayer = useSelector(
+    (state: RootState) => state.game.currentPlayer
+  );
+  const [animatingTransfer, setAnimatingTransfer] = useState<{
+    from: number;
+    to: "active";
+  } | null>(null);
+
   // Calculate distance traveled and required mixture length
-  const distanceTraveled = shipState.distanceToDestination.max - shipState.distanceToDestination.current;
+  const distanceTraveled =
+    shipState.distanceToDestination.max -
+    shipState.distanceToDestination.current;
   const requiredMixtureLength = getMixtureLength(distanceTraveled);
-  
+
   const currentGameSeconds = gameClock.minutes * 60 + gameClock.seconds;
-  const isRefuelOnCooldown = currentGameSeconds < scienceState.fuelMixture.refuelCooldownUntil;
-  const refuelCooldownRemaining = Math.max(0, scienceState.fuelMixture.refuelCooldownUntil - currentGameSeconds);
-  const isDumpOnCooldown = currentGameSeconds < scienceState.fuelMixture.dumpCooldownUntil;
-  const dumpCooldownRemaining = Math.max(0, scienceState.fuelMixture.dumpCooldownUntil - currentGameSeconds);
-  const isDumpAllOnCooldown = currentGameSeconds < scienceState.fuelMixture.dumpAllCooldownUntil;
-  const dumpAllCooldownRemaining = Math.max(0, scienceState.fuelMixture.dumpAllCooldownUntil - currentGameSeconds);
-  
+  const isRefuelOnCooldown =
+    currentGameSeconds < scienceState.fuelMixture.refuelCooldownUntil;
+  const refuelCooldownRemaining = Math.max(
+    0,
+    scienceState.fuelMixture.refuelCooldownUntil - currentGameSeconds
+  );
+  const isDumpOnCooldown =
+    currentGameSeconds < scienceState.fuelMixture.dumpCooldownUntil;
+  const dumpCooldownRemaining = Math.max(
+    0,
+    scienceState.fuelMixture.dumpCooldownUntil - currentGameSeconds
+  );
+  const isDumpAllOnCooldown =
+    currentGameSeconds < scienceState.fuelMixture.dumpAllCooldownUntil;
+  const dumpAllCooldownRemaining = Math.max(
+    0,
+    scienceState.fuelMixture.dumpAllCooldownUntil - currentGameSeconds
+  );
+
   // Calculate countdown to next mixture change
-  const secondsUntilNextChange = 20 - (currentGameSeconds - scienceState.fuelMixture.lastChangeTime);
-  
+  const secondsUntilNextChange =
+    20 - (currentGameSeconds - scienceState.fuelMixture.lastChangeTime);
+
   useEffect(() => {
-    dispatch(updateCorrectMixtures({ currentGameSeconds, mixtureLength: requiredMixtureLength }));
-  }, [currentGameSeconds, requiredMixtureLength, dispatch]);
-  
-  useEffect(() => {
-    if (scienceState.fuelMixture.activeTube.layers.length !== requiredMixtureLength) return;
-    
-    const targetMixture = currentPlayer === 'Gobi' 
-      ? scienceState.fuelMixture.correctMixture.ownShip 
-      : scienceState.fuelMixture.correctMixture.otherShip;
-    
-    const isCorrect = scienceState.fuelMixture.activeTube.layers.every(
-      (fuel, index) => fuel === targetMixture[index]
-    );
-    
-    if (isCorrect) {
-      dispatch(checkAndProcessCorrectMixture({ 
-        currentPlayer: currentPlayer || 'Gobi',
+    dispatch(
+      updateCorrectMixtures({
         currentGameSeconds,
-        requiredLength: requiredMixtureLength
-      }));
-      
-      dispatch(updateSystemValue({
-        system: 'fuelLevels',
-        value: FUEL_ADDED_PER_CORRECT_MIXTURE,
-        isCurrentValue: true
-      }));
+        mixtureLength: requiredMixtureLength,
+      })
+    );
+  }, [currentGameSeconds, requiredMixtureLength, dispatch]);
+
+  useEffect(() => {
+    if (
+      scienceState.fuelMixture.activeTube.layers.length !==
+      requiredMixtureLength
+    )
+      return;
+
+    // Get both current and previous target mixtures for forgiveness
+    const currentTargetMixture =
+      currentPlayer === "Gobi"
+        ? scienceState.fuelMixture.correctMixture.ownShip
+        : scienceState.fuelMixture.correctMixture.otherShip;
+
+    const previousTargetMixture =
+      currentPlayer === "Gobi"
+        ? scienceState.fuelMixture.previousCorrectMixture.ownShip
+        : scienceState.fuelMixture.previousCorrectMixture.otherShip;
+
+    // Check if it matches either current or previous mixture
+    const matchesCurrent = scienceState.fuelMixture.activeTube.layers.every(
+      (fuel, index) => fuel === currentTargetMixture[index]
+    );
+    const matchesPrevious = scienceState.fuelMixture.activeTube.layers.every(
+      (fuel, index) => fuel === previousTargetMixture[index]
+    );
+
+    if (matchesCurrent || matchesPrevious) {
+      dispatch(
+        checkAndProcessCorrectMixture({
+          currentPlayer: currentPlayer || "Gobi",
+          currentGameSeconds,
+          requiredLength: requiredMixtureLength,
+        })
+      );
+
+      dispatch(
+        updateSystemValue({
+          system: "fuelLevels",
+          value: FUEL_ADDED_PER_CORRECT_MIXTURE,
+          isCurrentValue: true,
+        })
+      );
     }
-  }, [scienceState.fuelMixture.activeTube.layers, scienceState.fuelMixture.correctMixture, currentPlayer, currentGameSeconds, requiredMixtureLength, dispatch]);
-  
+  }, [
+    scienceState.fuelMixture.activeTube.layers,
+    scienceState.fuelMixture.correctMixture,
+    scienceState.fuelMixture.previousCorrectMixture,
+    currentPlayer,
+    currentGameSeconds,
+    requiredMixtureLength,
+    dispatch,
+  ]);
+
   const handleTubeClick = (index: number) => {
     if (animatingTransfer) return;
-    if (scienceState.fuelMixture.storageTubes[index].layers.length === 0) return;
-    if (scienceState.fuelMixture.activeTube.layers.length >= requiredMixtureLength) return;
-    
-    setAnimatingTransfer({ from: index, to: 'active' });
-    dispatch(transferFuel({ tubeIndex: index, maxLayers: requiredMixtureLength }));
-    
+    if (scienceState.fuelMixture.storageTubes[index].layers.length === 0)
+      return;
+    if (
+      scienceState.fuelMixture.activeTube.layers.length >= requiredMixtureLength
+    )
+      return;
+
+    setAnimatingTransfer({ from: index, to: "active" });
+    dispatch(
+      transferFuel({ tubeIndex: index, maxLayers: requiredMixtureLength })
+    );
+
     setTimeout(() => {
       setAnimatingTransfer(null);
     }, 300);
   };
-  
+
   const handleDump = () => {
-    if (!isDumpOnCooldown && scienceState.fuelMixture.activeTube.layers.length > 0) {
+    if (
+      !isDumpOnCooldown &&
+      scienceState.fuelMixture.activeTube.layers.length > 0
+    ) {
       dispatch(dumpTopLayer(currentGameSeconds));
     }
   };
-  
+
   const handleDumpAll = () => {
-    if (!isDumpAllOnCooldown && scienceState.fuelMixture.activeTube.layers.length > 0) {
+    if (
+      !isDumpAllOnCooldown &&
+      scienceState.fuelMixture.activeTube.layers.length > 0
+    ) {
       dispatch(dumpAllLayers(currentGameSeconds));
     }
   };
-  
+
   const handleRefuel = () => {
     if (!isRefuelOnCooldown) {
       dispatch(startRefuel(currentGameSeconds));
     }
   };
-  
+
   // Check if cooldown has expired and complete refuel
   useEffect(() => {
-    if (scienceState.fuelMixture.refuelCooldownUntil > 0 && 
-        currentGameSeconds >= scienceState.fuelMixture.refuelCooldownUntil &&
-        scienceState.fuelMixture.storageTubes.every(tube => tube.layers.length === 0)) {
+    if (
+      scienceState.fuelMixture.refuelCooldownUntil > 0 &&
+      currentGameSeconds >= scienceState.fuelMixture.refuelCooldownUntil &&
+      scienceState.fuelMixture.storageTubes.every(
+        (tube) => tube.layers.length === 0
+      )
+    ) {
       dispatch(completeRefuel());
     }
-  }, [currentGameSeconds, scienceState.fuelMixture.refuelCooldownUntil, scienceState.fuelMixture.storageTubes, dispatch]);
-  
-  const correctMixture = currentPlayer === 'Gobi' 
-    ? scienceState.fuelMixture.correctMixture.otherShip.slice(0, requiredMixtureLength)
-    : scienceState.fuelMixture.correctMixture.ownShip.slice(0, requiredMixtureLength);
-  
+  }, [
+    currentGameSeconds,
+    scienceState.fuelMixture.refuelCooldownUntil,
+    scienceState.fuelMixture.storageTubes,
+    dispatch,
+  ]);
+
+  const correctMixture =
+    currentPlayer === "Gobi"
+      ? scienceState.fuelMixture.correctMixture.otherShip.slice(
+          0,
+          requiredMixtureLength
+        )
+      : scienceState.fuelMixture.correctMixture.ownShip.slice(
+          0,
+          requiredMixtureLength
+        );
+
+  const previousCorrectMixture =
+    currentPlayer === "Gobi"
+      ? scienceState.fuelMixture.previousCorrectMixture.otherShip.slice(
+          0,
+          requiredMixtureLength
+        )
+      : scienceState.fuelMixture.previousCorrectMixture.ownShip.slice(
+          0,
+          requiredMixtureLength
+        );
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between">
         <div>
-          <h3 className="text-sm font-mono text-gray-400 mb-2 text-center">Storage Tubes</h3>
+          <h3 className="text-sm font-mono text-gray-400 mb-2 text-center">
+            Storage Tubes
+          </h3>
           <div className="flex space-x-4">
             {scienceState.fuelMixture.storageTubes.map((tube, index) => (
               <TestTubeComponent
@@ -225,66 +331,95 @@ const FuelMixingGame: React.FC = () => {
               />
             ))}
           </div>
+          <div className="flex justify-center mt-4">
+            <button
+              onClick={handleRefuel}
+              disabled={isRefuelOnCooldown}
+              className={`px-4 py-2 rounded font-mono text-sm ${
+                isRefuelOnCooldown
+                  ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
+            >
+              {isRefuelOnCooldown
+                ? `Restock (${refuelCooldownRemaining}s)`
+                : "Restock"}
+            </button>
+          </div>
         </div>
-        
+
         <div className="flex space-x-4">
           <div>
-            <h3 className="text-sm font-mono text-gray-400 mb-2 text-center">Active Mixture</h3>
+            <h3 className="text-sm font-mono text-gray-400 mb-2 text-center">
+              Active Mixture
+            </h3>
             <TestTubeComponent
               layers={scienceState.fuelMixture.activeTube.layers}
               maxLayers={requiredMixtureLength}
               isActive={true}
             />
           </div>
-          
-          <div className="flex flex-col justify-end space-y-2">
+
+          <div className="flex flex-col justify-between h-full">
             <button
               onClick={handleDump}
-              disabled={isDumpOnCooldown || scienceState.fuelMixture.activeTube.layers.length === 0}
+              disabled={
+                isDumpOnCooldown ||
+                scienceState.fuelMixture.activeTube.layers.length === 0
+              }
               className={`px-4 py-2 rounded font-mono text-sm ${
-                isDumpOnCooldown || scienceState.fuelMixture.activeTube.layers.length === 0
-                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  : 'bg-orange-600 hover:bg-orange-700 text-white'
+                isDumpOnCooldown ||
+                scienceState.fuelMixture.activeTube.layers.length === 0
+                  ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                  : "bg-orange-600 hover:bg-orange-700 text-white"
               }`}
             >
-              {isDumpOnCooldown ? `Dump (${dumpCooldownRemaining}s)` : 'Dump'}
+              {isDumpOnCooldown ? `Dump (${dumpCooldownRemaining}s)` : "Dump"}
             </button>
-            
+
             <button
               onClick={handleDumpAll}
-              disabled={isDumpAllOnCooldown || scienceState.fuelMixture.activeTube.layers.length === 0}
+              disabled={
+                isDumpAllOnCooldown ||
+                scienceState.fuelMixture.activeTube.layers.length === 0
+              }
               className={`px-4 py-2 rounded font-mono text-sm ${
-                isDumpAllOnCooldown || scienceState.fuelMixture.activeTube.layers.length === 0
-                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  : 'bg-red-600 hover:bg-red-700 text-white'
+                isDumpAllOnCooldown ||
+                scienceState.fuelMixture.activeTube.layers.length === 0
+                  ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                  : "bg-red-600 hover:bg-red-700 text-white"
               }`}
             >
-              {isDumpAllOnCooldown ? `Dump all (${dumpAllCooldownRemaining}s)` : 'Dump all'}
-            </button>
-            
-            <button
-              onClick={handleRefuel}
-              disabled={isRefuelOnCooldown}
-              className={`px-4 py-2 rounded font-mono text-sm ${
-                isRefuelOnCooldown
-                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
-            >
-              {isRefuelOnCooldown ? `Restock (${refuelCooldownRemaining}s)` : 'Restock'}
+              {isDumpAllOnCooldown
+                ? `Dump all (${dumpAllCooldownRemaining}s)`
+                : "Dump all"}
             </button>
           </div>
         </div>
-        
+
         <div>
           <h3 className="text-sm font-mono text-gray-400 mb-2 text-center">
-            {currentPlayer === 'Gobi' ? "Ben's" : "Gobi's"} Target ({requiredMixtureLength} fuels)
+            {currentPlayer === "Gobi" ? "Ben's" : "Gobi's"} Target
           </h3>
-          <TestTubeComponent
-            layers={correctMixture}
-            maxLayers={requiredMixtureLength}
-            isActive={false}
-          />
+          <div className="flex items-center gap-2">
+            <div>
+              <TestTubeComponent
+                layers={correctMixture}
+                maxLayers={requiredMixtureLength}
+                isActive={false}
+                label="Current"
+              />
+            </div>
+            <div className="opacity-60">
+              <TestTubeComponent
+                layers={previousCorrectMixture}
+                maxLayers={requiredMixtureLength}
+                isActive={false}
+                label="Previous"
+                scale={0.5}
+              />
+            </div>
+          </div>
           <div className="text-center mt-2">
             <p className="text-xs font-mono text-teal-400">
               Next: {secondsUntilNextChange}s
@@ -302,20 +437,27 @@ const FuelMixingGame: React.FC = () => {
 export const Science: React.FC = () => {
   return (
     <div className="w-full max-w-4xl mx-auto p-6 bg-gray-800 rounded-lg">
-      <h2 className="text-2xl font-mono text-white text-center mb-8">Science Station - Reactor Control</h2>
-      
+      <h2 className="text-2xl font-mono text-white text-center mb-8">
+        Science Station - Reactor Control
+      </h2>
+
       <div className="space-y-8">
         <div className="bg-gray-700 p-6 rounded-lg">
-          <h3 className="text-lg font-mono text-teal-400 mb-4">Fuel Mixture Control</h3>
+          <h3 className="text-lg font-mono text-teal-400 mb-4">
+            Fuel Mixture Control
+          </h3>
           <FuelMixingGame />
           <p className="text-xs text-gray-400 text-center mt-4">
-            Click storage tubes to transfer fuel. Match the target mixture to add fuel to the ship.
+            Click storage tubes to transfer fuel. Match either the target
+            mixture, or the previous mixture to add fuel to the ship.
           </p>
         </div>
-        
+
         {PULSE_FREQUENCY_ENABLED && (
           <div className="bg-gray-700 p-6 rounded-lg">
-            <h3 className="text-lg font-mono text-teal-400 mb-4">Pulse Frequency Control</h3>
+            <h3 className="text-lg font-mono text-teal-400 mb-4">
+              Pulse Frequency Control
+            </h3>
             <div className="flex justify-center">
               <PulseButton />
             </div>
