@@ -4,6 +4,7 @@ import { updateSystemValue } from "../store/shipStore";
 import { updatePanelConnections } from "../store/stations/engineeringStore";
 import { updateNavigationValue } from "../store/stations/navigationStore";
 import { disasterEventBus } from "./DisasterEventBus";
+import { Quadrant, QUADRANT_BOUNDARIES, getQuadrant } from "../types";
 
 export type DisasterSeverity = "minor" | "major" | "catastrophic";
 
@@ -11,7 +12,7 @@ export interface DisasterType {
   name: string;
   severity: DisasterSeverity;
   weight: number;
-  minDistance: number; // Minimum distance traveled before this disaster can occur
+  minQuadrant: Quadrant; // Minimum quadrant before this disaster can occur
   execute: () => void;
 }
 
@@ -162,12 +163,12 @@ export class DisasterEvents {
 
 // Define all disaster types
 export const DISASTER_TYPES: DisasterType[] = [
-  // Minor Disasters
+  // Minor Disasters (can occur in Alpha Quadrant)
   {
     name: "Navigation Misalignment",
     severity: "minor",
     weight: 2,
-    minDistance: 0,
+    minQuadrant: Quadrant.Alpha,
     execute: () => {
       const nudgeAmount = Math.random() < 0.5 ? 1 : -1;
       DisasterEvents.nudgeNavigation(nudgeAmount);
@@ -177,7 +178,7 @@ export const DISASTER_TYPES: DisasterType[] = [
     name: "Single Asteroid",
     severity: "minor",
     weight: 5,
-    minDistance: 0,
+    minQuadrant: Quadrant.Alpha,
     execute: () => {
       const count = 1 + Math.floor(Math.random() * 3); // 1-3 asteroids
       DisasterEvents.spawnAsteroids(count, count); // All small
@@ -187,7 +188,7 @@ export const DISASTER_TYPES: DisasterType[] = [
     name: "Power Surge",
     severity: "minor",
     weight: 2,
-    minDistance: 0,
+    minQuadrant: Quadrant.Alpha,
     execute: () => {
       DisasterEvents.reducePower(50);
     },
@@ -196,18 +197,18 @@ export const DISASTER_TYPES: DisasterType[] = [
     name: "Minor Engineering Rewire",
     severity: "minor",
     weight: 30,
-    minDistance: 0,
+    minQuadrant: Quadrant.Alpha,
     execute: () => {
       DisasterEvents.engineeringRewire();
     },
   },
 
-  // Major Disasters
+  // Major Disasters (only in Beta Quadrant and beyond)
   {
     name: "Major Asteroid",
     severity: "major",
     weight: 4,
-    minDistance: 250,
+    minQuadrant: Quadrant.Beta,
     execute: () => {
       const totalCount = 3 + Math.floor(Math.random() * 3); // 3-5 asteroids
       const largeCount = 1 + Math.floor(Math.random() * 2); // 1-2 large
@@ -219,7 +220,7 @@ export const DISASTER_TYPES: DisasterType[] = [
     name: "Major Engineering Rewire",
     severity: "major",
     weight: 3,
-    minDistance: 250,
+    minQuadrant: Quadrant.Beta,
     execute: () => {
       const state = store.getState();
       const availablePanels = Object.keys(state.engineering.panels);
@@ -247,12 +248,12 @@ export const DISASTER_TYPES: DisasterType[] = [
     },
   },
 
-  // Catastrophic Disasters (only after 500km)
+  // Catastrophic Disasters (only in Gamma Quadrant and beyond)
   {
     name: "Three Minor Disasters",
     severity: "catastrophic",
     weight: 2,
-    minDistance: 500,
+    minQuadrant: Quadrant.Gamma,
     execute: () => {
       // Get minor disasters only
       const minorDisasters = DISASTER_TYPES.filter(
@@ -274,7 +275,7 @@ export const DISASTER_TYPES: DisasterType[] = [
     name: "Asteroid Cluster",
     severity: "catastrophic",
     weight: 3,
-    minDistance: 500,
+    minQuadrant: Quadrant.Gamma,
     execute: () => {
       const totalCount = 7 + Math.floor(Math.random() * 4); // 7-10 asteroids
       const largeCount = 2 + Math.floor(Math.random() * 2); // 2-3 large
@@ -337,25 +338,35 @@ export class DisasterSystem {
   }
 
   private triggerRandomDisaster(distanceTraveled: number): void {
-    // Filter disasters based on distance and calculate severity bias
+    const currentQuadrant = getQuadrant(distanceTraveled);
+    
+    // Helper to check if a quadrant meets the minimum requirement
+    const quadrantOrder = [Quadrant.Alpha, Quadrant.Beta, Quadrant.Gamma, Quadrant.Delta];
+    const meetsQuadrantRequirement = (minQuadrant: Quadrant): boolean => {
+      return quadrantOrder.indexOf(currentQuadrant) >= quadrantOrder.indexOf(minQuadrant);
+    };
+
+    // Filter disasters based on quadrant
     const availableDisasters = DISASTER_TYPES.filter(
-      (d) => distanceTraveled >= d.minDistance
+      (d) => meetsQuadrantRequirement(d.minQuadrant)
     );
 
     if (availableDisasters.length === 0) return;
 
-    // Apply severity bias based on distance
+    // Apply severity bias based on quadrant
     const biasedDisasters: DisasterType[] = [];
 
     availableDisasters.forEach((disaster) => {
       let effectiveWeight = disaster.weight;
 
-      // Increase catastrophic disaster chance after 500km
-      if (distanceTraveled >= 500 && disaster.severity === "catastrophic") {
-        effectiveWeight *= 3;
+      // Increase catastrophic disaster chance in Gamma Quadrant and beyond
+      if (currentQuadrant === Quadrant.Gamma || currentQuadrant === Quadrant.Delta) {
+        if (disaster.severity === "catastrophic") {
+          effectiveWeight *= 3;
+        }
       }
-      // Slightly increase major disaster chance after 250km
-      else if (distanceTraveled >= 250 && disaster.severity === "major") {
+      // Slightly increase major disaster chance in Beta Quadrant and beyond
+      if (currentQuadrant !== Quadrant.Alpha && disaster.severity === "major") {
         effectiveWeight *= 2;
       }
 
@@ -376,7 +387,7 @@ export class DisasterSystem {
     }
 
     console.log(
-      `🌟 Disaster triggered: ${selectedDisaster.name} (${selectedDisaster.severity})`
+      `🌟 Disaster triggered: ${selectedDisaster.name} (${selectedDisaster.severity}) in ${currentQuadrant} Quadrant`
     );
   }
 

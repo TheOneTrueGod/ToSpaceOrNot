@@ -48,3 +48,27 @@ export interface SystemChangeIndicator {
   direction: 'increasing' | 'decreasing' | 'stable';
   intensity: number; // 0-3 chevrons
 }
+
+// Ship quadrants based on distance traveled
+export enum Quadrant {
+  Alpha = 'Alpha',    // 0-250 km
+  Beta = 'Beta',      // 250-500 km
+  Gamma = 'Gamma',    // 500-750 km
+  Delta = 'Delta'     // 750-1000 km
+}
+
+// Quadrant distance boundaries
+export const QUADRANT_BOUNDARIES = {
+  [Quadrant.Alpha]: { min: 0, max: 250 },
+  [Quadrant.Beta]: { min: 250, max: 500 },
+  [Quadrant.Gamma]: { min: 500, max: 750 },
+  [Quadrant.Delta]: { min: 750, max: 1000 }
+} as const;
+
+// Helper function to get current quadrant based on distance traveled
+export function getQuadrant(distanceTraveled: number): Quadrant {
+  if (distanceTraveled < 250) return Quadrant.Alpha;
+  if (distanceTraveled < 500) return Quadrant.Beta;
+  if (distanceTraveled < 750) return Quadrant.Gamma;
+  return Quadrant.Delta;
+}

@@ -3,12 +3,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
 import { updateNavigationValue } from "../store/stations/navigationStore";
 import { resumeJourney } from "../store/shipStore";
+import { DEBUG_MODE } from "../store/stations/engineeringStore";
 
 export const Navigation: React.FC = () => {
   const dispatch = useDispatch();
   const navigationState = useSelector((state: RootState) => state.navigation);
   const shipState = useSelector((state: RootState) => state.ship);
-  const currentPlayer = useSelector((state: RootState) => state.game.currentPlayer);
+  const currentPlayer = useSelector(
+    (state: RootState) => state.game.currentPlayer
+  );
 
   const [countdown, setCountdown] = useState<number | null>(null);
 
@@ -76,7 +79,9 @@ export const Navigation: React.FC = () => {
       <div className="space-y-6">
         {/* Current Navigation Inputs */}
         <div className="bg-gray-400 p-4 rounded-lg border border-gray-300">
-          <h3 className="text-sm font-mono text-gray-700 mb-3 text-center">Current Navigation Settings</h3>
+          <h3 className="text-sm font-mono text-gray-700 mb-3 text-center">
+            Current Navigation Settings
+          </h3>
           <div className="flex items-center space-x-4">
             {/* Pitch Input */}
             <div className="flex-1 flex flex-col items-center">
@@ -125,7 +130,7 @@ export const Navigation: React.FC = () => {
         {/* Other Player's Correct Values */}
         <div className="bg-gray-700 p-4 rounded-lg border border-gray-600">
           <h3 className="text-sm font-mono text-teal-400 mb-3 text-center">
-            {currentPlayer === 'Gobi' ? "Ben's" : "Gobi's"} Correct Values
+            {currentPlayer === "Gobi" ? "Ben's" : "Gobi's"} Correct Values
           </h3>
           <div className="flex items-center space-x-4">
             {/* Other Player's Pitch */}
@@ -134,10 +139,9 @@ export const Navigation: React.FC = () => {
                 Pitch
               </label>
               <div className="w-full px-2 py-1 bg-gray-600 border border-gray-500 rounded font-mono text-sm text-white text-center">
-                {currentPlayer === 'Gobi' 
+                {currentPlayer === "Gobi"
                   ? navigationState.correctValues.ben.pitch.toFixed(1)
-                  : navigationState.correctValues.gobi.pitch.toFixed(1)
-                }
+                  : navigationState.correctValues.gobi.pitch.toFixed(1)}
               </div>
             </div>
 
@@ -147,10 +151,9 @@ export const Navigation: React.FC = () => {
                 Yaw
               </label>
               <div className="w-full px-2 py-1 bg-gray-600 border border-gray-500 rounded font-mono text-sm text-white text-center">
-                {currentPlayer === 'Gobi' 
+                {currentPlayer === "Gobi"
                   ? navigationState.correctValues.ben.yaw.toFixed(1)
-                  : navigationState.correctValues.gobi.yaw.toFixed(1)
-                }
+                  : navigationState.correctValues.gobi.yaw.toFixed(1)}
               </div>
             </div>
 
@@ -160,17 +163,16 @@ export const Navigation: React.FC = () => {
                 Roll
               </label>
               <div className="w-full px-2 py-1 bg-gray-600 border border-gray-500 rounded font-mono text-sm text-white text-center">
-                {currentPlayer === 'Gobi' 
+                {currentPlayer === "Gobi"
                   ? navigationState.correctValues.ben.roll.toFixed(1)
-                  : navigationState.correctValues.gobi.roll.toFixed(1)
-                }
+                  : navigationState.correctValues.gobi.roll.toFixed(1)}
               </div>
             </div>
           </div>
         </div>
 
         {/* Debug Mode: Current Player's Correct Values */}
-        {process.env.NODE_ENV === 'development' && (
+        {DEBUG_MODE && (
           <div className="bg-red-900 p-4 rounded-lg border border-red-600">
             <h3 className="text-sm font-mono text-red-400 mb-3 text-center">
               [DEBUG] Your Correct Values
@@ -182,10 +184,9 @@ export const Navigation: React.FC = () => {
                   Pitch
                 </label>
                 <div className="w-full px-2 py-1 bg-red-800 border border-red-500 rounded font-mono text-sm text-white text-center">
-                  {currentPlayer === 'Gobi' 
+                  {currentPlayer === "Gobi"
                     ? navigationState.correctValues.gobi.pitch.toFixed(1)
-                    : navigationState.correctValues.ben.pitch.toFixed(1)
-                  }
+                    : navigationState.correctValues.ben.pitch.toFixed(1)}
                 </div>
               </div>
 
@@ -195,10 +196,9 @@ export const Navigation: React.FC = () => {
                   Yaw
                 </label>
                 <div className="w-full px-2 py-1 bg-red-800 border border-red-500 rounded font-mono text-sm text-white text-center">
-                  {currentPlayer === 'Gobi' 
+                  {currentPlayer === "Gobi"
                     ? navigationState.correctValues.gobi.yaw.toFixed(1)
-                    : navigationState.correctValues.ben.yaw.toFixed(1)
-                  }
+                    : navigationState.correctValues.ben.yaw.toFixed(1)}
                 </div>
               </div>
 
@@ -208,10 +208,9 @@ export const Navigation: React.FC = () => {
                   Roll
                 </label>
                 <div className="w-full px-2 py-1 bg-red-800 border border-red-500 rounded font-mono text-sm text-white text-center">
-                  {currentPlayer === 'Gobi' 
+                  {currentPlayer === "Gobi"
                     ? navigationState.correctValues.gobi.roll.toFixed(1)
-                    : navigationState.correctValues.ben.roll.toFixed(1)
-                  }
+                    : navigationState.correctValues.ben.roll.toFixed(1)}
                 </div>
               </div>
             </div>

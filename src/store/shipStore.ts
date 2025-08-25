@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ShipState, Alert, Gauge } from "../types";
+import { ShipState, Alert, Gauge, Quadrant, QUADRANT_BOUNDARIES } from "../types";
 import { Asteroid } from "./stations/weaponsStore";
 
 const isGauge = (value: unknown): value is Gauge => {
@@ -11,8 +11,12 @@ const isGauge = (value: unknown): value is Gauge => {
   );
 };
 
-// Break point constants - ship pauses at these distances traveled
-export const BREAK_POINTS = [250, 500, 750] as const;
+// Break points are at the boundaries between quadrants
+export const BREAK_POINTS = [
+  QUADRANT_BOUNDARIES[Quadrant.Alpha].max,   // 250 - end of Alpha Quadrant
+  QUADRANT_BOUNDARIES[Quadrant.Beta].max,    // 500 - end of Beta Quadrant  
+  QUADRANT_BOUNDARIES[Quadrant.Gamma].max    // 750 - end of Gamma Quadrant
+] as const;
 
 const initialState: ShipState = {
   distanceToDestination: { current: 1000, max: 1000 },

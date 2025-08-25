@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { Quadrant, getQuadrant } from "../../types";
 
 export interface NavigationValues {
   pitch: number;
@@ -14,50 +15,56 @@ export interface NavigationState {
   current: NavigationValues;
 }
 
-// Navigation values for each stage based on distance traveled (0-250, 250-500, 500-750, 750-1000)
-// These are the break points: [250, 500, 750] meaning breaks at 250km, 500km, 750km traveled
-const NAVIGATION_VALUES_BY_STAGE = {
-  // Stage 0: 0-250km traveled
-  0: {
+// Navigation values for each quadrant
+const NAVIGATION_VALUES_BY_QUADRANT = {
+  // Alpha Quadrant: 0-250km traveled
+  [Quadrant.Alpha]: {
     gobi: { pitch: 15.5, yaw: 270.0, roll: 0.0 },
     ben: { pitch: 12.3, yaw: 275.5, roll: -2.1 },
   },
-  // Stage 1: 250-500km traveled
-  1: {
+  // Beta Quadrant: 250-500km traveled
+  [Quadrant.Beta]: {
     gobi: { pitch: 18.7, yaw: 265.2, roll: 1.5 },
     ben: { pitch: 16.1, yaw: 272.8, roll: -0.9 },
   },
-  // Stage 2: 500-750km traveled
-  2: {
+  // Gamma Quadrant: 500-750km traveled
+  [Quadrant.Gamma]: {
     gobi: { pitch: 14.2, yaw: 278.3, roll: -1.2 },
     ben: { pitch: 19.8, yaw: 268.7, roll: 2.3 },
   },
-  // Stage 3: 750-1000km traveled
-  3: {
+  // Delta Quadrant: 750-1000km traveled
+  [Quadrant.Delta]: {
     gobi: { pitch: 17.6, yaw: 263.9, roll: 0.8 },
     ben: { pitch: 13.4, yaw: 281.2, roll: -1.7 },
   },
 } as const;
 
-// Helper function to get current stage based on distance traveled
+// Helper function to get current stage number based on quadrant (for backward compatibility)
 export const getCurrentNavigationStage = (distanceTraveled: number): number => {
-  if (distanceTraveled < 250) return 0;
-  if (distanceTraveled < 500) return 1;
-  if (distanceTraveled < 750) return 2;
-  return 3;
+  const quadrant = getQuadrant(distanceTraveled);
+  const quadrantToStage = {
+    [Quadrant.Alpha]: 0,
+    [Quadrant.Beta]: 1,
+    [Quadrant.Gamma]: 2,
+    [Quadrant.Delta]: 3,
+  };
+  return quadrantToStage[quadrant];
 };
 
-// Helper function to get correct navigation values for current stage
+// Helper function to get correct navigation values for current quadrant
+export const getNavigationValuesForQuadrant = (quadrant: Quadrant) => {
+  return NAVIGATION_VALUES_BY_QUADRANT[quadrant];
+};
+
+// Helper function to get correct navigation values for stage (for backward compatibility)
 export const getNavigationValuesForStage = (stage: number) => {
-  return (
-    NAVIGATION_VALUES_BY_STAGE[
-      stage as keyof typeof NAVIGATION_VALUES_BY_STAGE
-    ] || NAVIGATION_VALUES_BY_STAGE[0]
-  );
+  const stageToQuadrant = [Quadrant.Alpha, Quadrant.Beta, Quadrant.Gamma, Quadrant.Delta];
+  const quadrant = stageToQuadrant[stage] || Quadrant.Alpha;
+  return getNavigationValuesForQuadrant(quadrant);
 };
 
 const initialState: NavigationState = {
-  correctValues: NAVIGATION_VALUES_BY_STAGE[0],
+  correctValues: NAVIGATION_VALUES_BY_QUADRANT[Quadrant.Alpha],
   current: { pitch: 0, yaw: 0, roll: 0 }, // Initialize to neutral values, will be set when player selects
 };
 
