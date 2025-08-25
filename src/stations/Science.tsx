@@ -360,21 +360,23 @@ const FuelMixingGame: React.FC = () => {
             />
           </div>
 
-          <div className="flex flex-col justify-between h-full">
+          <div className="flex flex-col h-full gap-4">
             <button
               onClick={handleDump}
               disabled={
                 isDumpOnCooldown ||
                 scienceState.fuelMixture.activeTube.layers.length === 0
               }
-              className={`px-4 py-2 rounded font-mono text-sm ${
+              className={`px-4 py-2 rounded font-mono text-sm mt-auto ${
                 isDumpOnCooldown ||
                 scienceState.fuelMixture.activeTube.layers.length === 0
                   ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                   : "bg-orange-600 hover:bg-orange-700 text-white"
               }`}
             >
-              {isDumpOnCooldown ? `Dump (${dumpCooldownRemaining}s)` : "Dump"}
+              {isDumpOnCooldown
+                ? `Dump one (${dumpCooldownRemaining}s)`
+                : "Dump one"}
             </button>
 
             <button
@@ -383,7 +385,7 @@ const FuelMixingGame: React.FC = () => {
                 isDumpAllOnCooldown ||
                 scienceState.fuelMixture.activeTube.layers.length === 0
               }
-              className={`px-4 py-2 rounded font-mono text-sm ${
+              className={`px-4 py-2 rounded font-mono text-sm mb-auto ${
                 isDumpAllOnCooldown ||
                 scienceState.fuelMixture.activeTube.layers.length === 0
                   ? "bg-gray-600 text-gray-400 cursor-not-allowed"
