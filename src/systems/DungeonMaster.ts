@@ -151,14 +151,17 @@ export class DungeonMaster {
       }
     });
 
-    // Check for general engineering malfunction alert (yellow warning)
-    const generalAlertName = "Engineering Malfunction";
-    const hasGeneralAlert = currentAlerts.some(
-      (alert) => alert.name === generalAlertName && alert.isActive
-    );
+    // Check for individual station wiring error alerts (yellow warnings)
+    const stationMapping: { [panelName: string]: string } = {
+      A1b2: "Weapons",
+      Xy9Z: "Thrust",
+      "3Fp7": "Fuel",
+      Q8wS: "Power",
+    };
 
-    // Check if ANY panel has ANY errors
-    let hasAnyErrors = false;
+    // Track which stations have errors
+    const stationsWithErrors: string[] = [];
+    
     for (const panelName of Object.keys(engineeringState.panels)) {
       const currentPanel = engineeringState.panels[panelName];
       const correctPanel = engineeringState.correctState[currentPlayer][panelName];
@@ -168,33 +171,41 @@ export class DungeonMaster {
           currentPanel.connections,
           correctPanel.connections
         );
-        if (incorrectCount > 0) {
-          hasAnyErrors = true;
-          break;
+        if (incorrectCount > 0 && stationMapping[panelName]) {
+          stationsWithErrors.push(stationMapping[panelName]);
         }
       }
     }
 
-    if (hasAnyErrors && !hasGeneralAlert) {
-      // Add general engineering malfunction alert
-      const generalAlert = AlertSystem.createAlert(
-        generalAlertName,
-        "Engineering panels have wiring errors. Check all panels for incorrect connections.",
-        "Warning",
-        "Gobi", // Default owner, could be made configurable
-        [],
-        "automatic"
+    // Create or remove alerts for each station
+    ["Weapons", "Thrust", "Fuel", "Power"].forEach((stationName) => {
+      const alertName = `${stationName} Wiring Error`;
+      const hasAlert = currentAlerts.some(
+        (alert) => alert.name === alertName && alert.isActive
       );
-      store.dispatch(addAlert(generalAlert));
-    } else if (!hasAnyErrors && hasGeneralAlert) {
-      // Remove general engineering malfunction alert
-      const alertToRemove = currentAlerts.find(
-        (alert) => alert.name === generalAlertName && alert.isActive
-      );
-      if (alertToRemove) {
-        store.dispatch(removeAlert(alertToRemove.id));
+      const hasError = stationsWithErrors.includes(stationName);
+
+      if (hasError && !hasAlert) {
+        // Add station-specific wiring error alert
+        const wiringAlert = AlertSystem.createAlert(
+          alertName,
+          `${stationName} panel has incorrect wiring connections. Check panel for errors.`,
+          "Warning",
+          "Gobi", // Default owner, could be made configurable
+          [],
+          "automatic"
+        );
+        store.dispatch(addAlert(wiringAlert));
+      } else if (!hasError && hasAlert) {
+        // Remove station-specific wiring error alert
+        const alertToRemove = currentAlerts.find(
+          (alert) => alert.name === alertName && alert.isActive
+        );
+        if (alertToRemove) {
+          store.dispatch(removeAlert(alertToRemove.id));
+        }
       }
-    }
+    });
   }
 
   start() {
