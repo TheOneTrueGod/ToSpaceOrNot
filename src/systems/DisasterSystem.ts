@@ -1,7 +1,11 @@
 import { store } from "../store";
 import { spawnAsteroid } from "../store/stations/weaponsStore";
 import { updateSystemValue } from "../store/shipStore";
-import { updatePanelConnections, countIncorrectConnections } from "../store/stations/engineeringStore";
+import {
+  updatePanelConnections,
+  countIncorrectConnections,
+  RewireSource,
+} from "../store/stations/engineeringStore";
 import { updateNavigationValue } from "../store/stations/navigationStore";
 import { disasterEventBus } from "./DisasterEventBus";
 import { Quadrant, QUADRANT_BOUNDARIES, getQuadrant } from "../types";
@@ -9,10 +13,9 @@ import { Quadrant, QUADRANT_BOUNDARIES, getQuadrant } from "../types";
 export type DisasterSeverity = "minor" | "major" | "catastrophic";
 
 export interface DisasterType {
+  id: string;
   name: string;
   severity: DisasterSeverity;
-  weight: number;
-  minQuadrant: Quadrant; // Minimum quadrant before this disaster can occur
   execute: () => void;
 }
 
@@ -88,39 +91,66 @@ export class DisasterEvents {
     );
   }
 
-  // Perform engineering rewire on a panel
-  static engineeringRewire(panelName?: string) {
+  // Check if a panel can be rewired based on override rules
+  static canRewirePanel(panel: any, newSource: RewireSource): boolean {
+    const currentSource = panel.rewireSource;
+
+    // If panel has no rewire source (user fixed or never rewired), it can be rewired
+    if (!currentSource) return true;
+
+    // Define override hierarchy
+    const hierarchy: Record<RewireSource, number> = {
+      user: 0,
+      minor: 1,
+      major: 2,
+      catastrophic: 3,
+    };
+
+    // Check override rules
+    if (newSource === "minor") {
+      // Minor cannot override any existing rewire
+      return false;
+    } else if (newSource === "major") {
+      // Major can override minor only
+      return hierarchy[currentSource] < hierarchy["major"];
+    } else if (newSource === "catastrophic") {
+      // Catastrophic can override minor and major, but not another catastrophic
+      return hierarchy[currentSource] < hierarchy["catastrophic"];
+    }
+
+    return false;
+  }
+
+  // Perform engineering rewire on a panel with source tracking
+  static engineeringRewire(panelName?: string, source: RewireSource = "minor") {
     const state = store.getState();
     const engineering = state.engineering;
-    const currentPlayer = state.game?.currentPlayer || 'Gobi';
-    
-    // Get panels that don't have errors (are correctly wired)
-    const availablePanels = Object.keys(engineering.panels).filter(panel => {
+    const currentPlayer = state.game?.currentPlayer || "Gobi";
+
+    // Get panels that can be rewired based on override rules
+    const availablePanels = Object.keys(engineering.panels).filter((panel) => {
       const currentPanel = engineering.panels[panel];
       const correctPanel = engineering.correctState[currentPlayer][panel];
-      
+
       if (!currentPanel || !correctPanel) return false;
-      
-      const incorrectCount = countIncorrectConnections(
-        currentPanel.connections,
-        correctPanel.connections
-      );
-      
-      // Only consider panels with no errors
-      return incorrectCount === 0;
+
+      // Check if this panel can be rewired based on override rules
+      return DisasterEvents.canRewirePanel(currentPanel, source);
     });
 
-    // If no panels without errors, nothing happens
+    // If no panels can be rewired, nothing happens
     if (availablePanels.length === 0) {
-      console.log("🛡️ Engineering disaster avoided - all panels already have errors");
+      console.log(
+        `🛡️ ${source} engineering disaster avoided - no valid panels to rewire`
+      );
       return null;
     }
 
     const targetPanel =
-      panelName && availablePanels.includes(panelName) 
+      panelName && availablePanels.includes(panelName)
         ? panelName
         : availablePanels[Math.floor(Math.random() * availablePanels.length)];
-    
+
     const panel = engineering.panels[targetPanel];
 
     if (!panel || panel.connections.length === 0) return null;
@@ -176,6 +206,8 @@ export class DisasterEvents {
       updatePanelConnections({
         panelName: targetPanel,
         connections: newConnections,
+        source: source,
+        currentPlayer: currentPlayer,
       })
     );
 
@@ -183,54 +215,49 @@ export class DisasterEvents {
   }
 }
 
-// Define all disaster types
-export const DISASTER_TYPES: DisasterType[] = [
-  // Minor Disasters (can occur in Alpha Quadrant)
-  {
+// Define all disaster types with IDs
+export const DISASTER_TYPES: Record<string, DisasterType> = {
+  // Minor Disasters
+  NAV_MISALIGN: {
+    id: "NAV_MISALIGN",
     name: "Navigation Misalignment",
     severity: "minor",
-    weight: 2,
-    minQuadrant: Quadrant.Alpha,
     execute: () => {
       const nudgeAmount = Math.random() < 0.5 ? 1 : -1;
       DisasterEvents.nudgeNavigation(nudgeAmount);
     },
   },
-  {
+  SINGLE_ASTEROID: {
+    id: "SINGLE_ASTEROID",
     name: "Single Asteroid",
     severity: "minor",
-    weight: 5,
-    minQuadrant: Quadrant.Alpha,
     execute: () => {
       const count = 1 + Math.floor(Math.random() * 3); // 1-3 asteroids
       DisasterEvents.spawnAsteroids(count, count); // All small
     },
   },
-  {
+  POWER_SURGE: {
+    id: "POWER_SURGE",
     name: "Power Surge",
     severity: "minor",
-    weight: 2,
-    minQuadrant: Quadrant.Alpha,
     execute: () => {
       DisasterEvents.reducePower(50);
     },
   },
-  {
+  MINOR_REWIRE: {
+    id: "MINOR_REWIRE",
     name: "Minor Engineering Rewire",
     severity: "minor",
-    weight: 30,
-    minQuadrant: Quadrant.Alpha,
     execute: () => {
-      DisasterEvents.engineeringRewire();
+      DisasterEvents.engineeringRewire(undefined, "minor");
     },
   },
 
-  // Major Disasters (only in Beta Quadrant and beyond)
-  {
+  // Major Disasters
+  MAJOR_ASTEROID: {
+    id: "MAJOR_ASTEROID",
     name: "Major Asteroid",
     severity: "major",
-    weight: 4,
-    minQuadrant: Quadrant.Beta,
     execute: () => {
       const totalCount = 3 + Math.floor(Math.random() * 3); // 3-5 asteroids
       const largeCount = 1 + Math.floor(Math.random() * 2); // 1-2 large
@@ -238,91 +265,150 @@ export const DISASTER_TYPES: DisasterType[] = [
       DisasterEvents.spawnAsteroids(totalCount, smallCount, 0, largeCount);
     },
   },
-  {
+  MAJOR_REWIRE: {
+    id: "MAJOR_REWIRE",
     name: "Major Engineering Rewire",
     severity: "major",
-    weight: 3,
-    minQuadrant: Quadrant.Beta,
     execute: () => {
       const state = store.getState();
-      const currentPlayer = state.game?.currentPlayer || 'Gobi';
-      
-      // Get panels that don't have errors
-      const availablePanels = Object.keys(state.engineering.panels).filter(panel => {
-        const currentPanel = state.engineering.panels[panel];
-        const correctPanel = state.engineering.correctState[currentPlayer][panel];
-        
-        if (!currentPanel || !correctPanel) return false;
-        
-        const incorrectCount = countIncorrectConnections(
-          currentPanel.connections,
-          correctPanel.connections
-        );
-        
-        return incorrectCount === 0;
-      });
+      const engineering = state.engineering;
+
+      // Get panels that can be affected by major rewire
+      const availablePanels = Object.keys(engineering.panels).filter(
+        (panel) => {
+          const currentPanel = engineering.panels[panel];
+          return DisasterEvents.canRewirePanel(currentPanel, "major");
+        }
+      );
 
       if (availablePanels.length === 0) {
-        console.log("🛡️ Major engineering disaster avoided - all panels already have errors");
+        console.log(
+          "🛡️ Major engineering disaster avoided - no panels can be overridden"
+        );
         return;
       }
 
       // Try to affect up to 2 different panels
       const panelsAffected: string[] = [];
-      
+
       // First panel gets 2 rewires if possible
-      const firstPanel = availablePanels[Math.floor(Math.random() * availablePanels.length)];
-      const firstResult = DisasterEvents.engineeringRewire(firstPanel);
+      const firstPanel =
+        availablePanels[Math.floor(Math.random() * availablePanels.length)];
+      const firstResult = DisasterEvents.engineeringRewire(firstPanel, "major");
       if (firstResult) {
         panelsAffected.push(firstResult);
-        // Try second rewire on same panel (it might now have an error after first rewire)
-        DisasterEvents.engineeringRewire(firstPanel);
+        // Try second rewire on same panel (major can override itself)
+        DisasterEvents.engineeringRewire(firstPanel, "major");
       }
 
       // Try to affect a different panel if available
-      const otherAvailablePanels = availablePanels.filter(name => name !== firstPanel);
+      const otherAvailablePanels = availablePanels.filter(
+        (name) => name !== firstPanel
+      );
       if (otherAvailablePanels.length > 0) {
-        const secondPanel = otherAvailablePanels[Math.floor(Math.random() * otherAvailablePanels.length)];
-        const secondResult = DisasterEvents.engineeringRewire(secondPanel);
+        const secondPanel =
+          otherAvailablePanels[
+            Math.floor(Math.random() * otherAvailablePanels.length)
+          ];
+        const secondResult = DisasterEvents.engineeringRewire(
+          secondPanel,
+          "major"
+        );
         if (secondResult) {
           panelsAffected.push(secondResult);
         }
       }
-      
+
       if (panelsAffected.length === 0) {
-        console.log("🛡️ Major engineering disaster had no effect - all targeted panels had errors");
+        console.log(
+          "🛡️ Major engineering disaster had no effect - no valid panels to rewire"
+        );
       }
     },
   },
 
-  // Catastrophic Disasters (only in Gamma Quadrant and beyond)
-  {
+  // Catastrophic Disasters
+  CATASTROPHIC_REWIRE: {
+    id: "CATASTROPHIC_REWIRE",
+    name: "Catastrophic Engineering Failure",
+    severity: "catastrophic",
+    execute: () => {
+      const state = store.getState();
+      const engineering = state.engineering;
+
+      // Get panels that can be affected by catastrophic rewire
+      const availablePanels = Object.keys(engineering.panels).filter(
+        (panel) => {
+          const currentPanel = engineering.panels[panel];
+          return DisasterEvents.canRewirePanel(currentPanel, "catastrophic");
+        }
+      );
+
+      if (availablePanels.length === 0) {
+        console.log(
+          "🛡️ Catastrophic engineering disaster avoided - all panels already catastrophically damaged"
+        );
+        return;
+      }
+
+      // Catastrophic affects up to 3 panels with multiple rewires each
+      const numPanelsToAffect = Math.min(3, availablePanels.length);
+      const selectedPanels = [];
+      const availablePanelsCopy = [...availablePanels];
+
+      // Select random panels to affect
+      for (
+        let i = 0;
+        i < numPanelsToAffect && availablePanelsCopy.length > 0;
+        i++
+      ) {
+        const randomIndex = Math.floor(
+          Math.random() * availablePanelsCopy.length
+        );
+        selectedPanels.push(availablePanelsCopy[randomIndex]);
+        availablePanelsCopy.splice(randomIndex, 1);
+      }
+
+      // Apply 2-3 rewires to each selected panel
+      selectedPanels.forEach((panelName) => {
+        const numRewires = 2 + Math.floor(Math.random() * 2); // 2-3 rewires
+        for (let i = 0; i < numRewires; i++) {
+          DisasterEvents.engineeringRewire(panelName, "catastrophic");
+        }
+      });
+
+      if (selectedPanels.length > 0) {
+        console.log(
+          `🔥 Catastrophic engineering failure affected ${selectedPanels.length} panels`
+        );
+      }
+    },
+  },
+  THREE_MINORS: {
+    id: "THREE_MINORS",
     name: "Three Minor Disasters",
     severity: "catastrophic",
-    weight: 2,
-    minQuadrant: Quadrant.Gamma,
     execute: () => {
       // Get minor disasters only
-      const minorDisasters = DISASTER_TYPES.filter(
-        (d) => d.severity === "minor"
+      const minorDisasterIds = Object.keys(DISASTER_TYPES).filter(
+        (id) => DISASTER_TYPES[id].severity === "minor"
       );
 
       // Execute three random minor disasters
       for (let i = 0; i < 3; i++) {
-        const randomDisaster =
-          minorDisasters[Math.floor(Math.random() * minorDisasters.length)];
-        randomDisaster.execute();
+        const randomId =
+          minorDisasterIds[Math.floor(Math.random() * minorDisasterIds.length)];
+        DISASTER_TYPES[randomId].execute();
       }
 
       // Spawn two small asteroids
       DisasterEvents.spawnAsteroids(2, 2);
     },
   },
-  {
+  ASTEROID_CLUSTER: {
+    id: "ASTEROID_CLUSTER",
     name: "Asteroid Cluster",
     severity: "catastrophic",
-    weight: 3,
-    minQuadrant: Quadrant.Gamma,
     execute: () => {
       const totalCount = 7 + Math.floor(Math.random() * 4); // 7-10 asteroids
       const largeCount = 2 + Math.floor(Math.random() * 2); // 2-3 large
@@ -339,7 +425,56 @@ export const DISASTER_TYPES: DisasterType[] = [
       );
     },
   },
-];
+};
+
+// Quadrant-to-disaster mapping with weights
+interface DisasterWeight {
+  disasterId: string;
+  weight: number;
+}
+
+export const QUADRANT_DISASTER_WEIGHTS: Record<Quadrant, DisasterWeight[]> = {
+  [Quadrant.Alpha]: [
+    // Mostly minor disasters in Alpha Quadrant
+    { disasterId: "NAV_MISALIGN", weight: 3 },
+    { disasterId: "SINGLE_ASTEROID", weight: 5 },
+    { disasterId: "POWER_SURGE", weight: 3 },
+    { disasterId: "MINOR_REWIRE", weight: 30 },
+    // Very rare major disaster
+    { disasterId: "MAJOR_ASTEROID", weight: 1 },
+  ],
+  [Quadrant.Beta]: [
+    // Mix of minor and major disasters in Beta Quadrant
+    { disasterId: "NAV_MISALIGN", weight: 2 },
+    { disasterId: "SINGLE_ASTEROID", weight: 3 },
+    { disasterId: "POWER_SURGE", weight: 2 },
+    { disasterId: "MINOR_REWIRE", weight: 15 },
+    { disasterId: "MAJOR_ASTEROID", weight: 5 },
+    { disasterId: "MAJOR_REWIRE", weight: 4 },
+    // Very rare catastrophic
+    { disasterId: "THREE_MINORS", weight: 1 },
+  ],
+  [Quadrant.Gamma]: [
+    // Mostly major and catastrophic disasters in Gamma Quadrant
+    { disasterId: "NAV_MISALIGN", weight: 1 },
+    { disasterId: "SINGLE_ASTEROID", weight: 2 },
+    { disasterId: "MINOR_REWIRE", weight: 5 },
+    { disasterId: "MAJOR_ASTEROID", weight: 6 },
+    { disasterId: "MAJOR_REWIRE", weight: 5 },
+    { disasterId: "CATASTROPHIC_REWIRE", weight: 2 },
+    { disasterId: "THREE_MINORS", weight: 3 },
+    { disasterId: "ASTEROID_CLUSTER", weight: 4 },
+  ],
+  [Quadrant.Delta]: [
+    // Predominantly catastrophic disasters in Delta Quadrant
+    { disasterId: "MINOR_REWIRE", weight: 1 },
+    { disasterId: "MAJOR_ASTEROID", weight: 4 },
+    { disasterId: "MAJOR_REWIRE", weight: 4 },
+    { disasterId: "CATASTROPHIC_REWIRE", weight: 6 },
+    { disasterId: "THREE_MINORS", weight: 5 },
+    { disasterId: "ASTEROID_CLUSTER", weight: 7 },
+  ],
+};
 
 export class DisasterSystem {
   private lastDisasterTime: number = 0;
@@ -374,9 +509,7 @@ export class DisasterSystem {
 
   private triggerFirstDisaster(): void {
     // First disaster is always major asteroid
-    const majorAsteroidDisaster = DISASTER_TYPES.find(
-      (d) => d.name === "Major Asteroid"
-    );
+    const majorAsteroidDisaster = DISASTER_TYPES["MAJOR_ASTEROID"];
     if (majorAsteroidDisaster) {
       majorAsteroidDisaster.execute();
       disasterEventBus.triggerAnimation("shake"); // General disaster animation
@@ -386,50 +519,35 @@ export class DisasterSystem {
 
   private triggerRandomDisaster(distanceTraveled: number): void {
     const currentQuadrant = getQuadrant(distanceTraveled);
-    
-    // Helper to check if a quadrant meets the minimum requirement
-    const quadrantOrder = [Quadrant.Alpha, Quadrant.Beta, Quadrant.Gamma, Quadrant.Delta];
-    const meetsQuadrantRequirement = (minQuadrant: Quadrant): boolean => {
-      return quadrantOrder.indexOf(currentQuadrant) >= quadrantOrder.indexOf(minQuadrant);
-    };
 
-    // Filter disasters based on quadrant
-    const availableDisasters = DISASTER_TYPES.filter(
-      (d) => meetsQuadrantRequirement(d.minQuadrant)
-    );
+    // Get disaster weights for current quadrant
+    const quadrantWeights = QUADRANT_DISASTER_WEIGHTS[currentQuadrant];
+    if (!quadrantWeights || quadrantWeights.length === 0) return;
 
-    if (availableDisasters.length === 0) return;
-
-    // Apply severity bias based on quadrant
-    const biasedDisasters: DisasterType[] = [];
-
-    availableDisasters.forEach((disaster) => {
-      let effectiveWeight = disaster.weight;
-
-      // Increase catastrophic disaster chance in Gamma Quadrant and beyond
-      if (currentQuadrant === Quadrant.Gamma || currentQuadrant === Quadrant.Delta) {
-        if (disaster.severity === "catastrophic") {
-          effectiveWeight *= 3;
-        }
-      }
-      // Slightly increase major disaster chance in Beta Quadrant and beyond
-      if (currentQuadrant !== Quadrant.Alpha && disaster.severity === "major") {
-        effectiveWeight *= 2;
-      }
-
-      // Add disaster multiple times based on weight
-      for (let i = 0; i < effectiveWeight; i++) {
-        biasedDisasters.push(disaster);
+    // Build weighted array of disaster IDs
+    const weightedDisasterIds: string[] = [];
+    quadrantWeights.forEach((dw) => {
+      for (let i = 0; i < dw.weight; i++) {
+        weightedDisasterIds.push(dw.disasterId);
       }
     });
 
-    // Pick random disaster
-    const selectedDisaster =
-      biasedDisasters[Math.floor(Math.random() * biasedDisasters.length)];
+    // Pick random disaster ID
+    const selectedId =
+      weightedDisasterIds[
+        Math.floor(Math.random() * weightedDisasterIds.length)
+      ];
+    const selectedDisaster = DISASTER_TYPES[selectedId];
+
+    if (!selectedDisaster) {
+      console.error(`Disaster with ID ${selectedId} not found!`);
+      return;
+    }
+
     selectedDisaster.execute();
 
     // Trigger appropriate animation (navigation misalignment already triggers its own)
-    if (selectedDisaster.name !== "Navigation Misalignment") {
+    if (selectedDisaster.id !== "NAV_MISALIGN") {
       disasterEventBus.triggerAnimation("shake");
     }
 

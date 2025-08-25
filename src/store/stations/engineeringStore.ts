@@ -5,8 +5,11 @@ interface WireConnection {
   to: { type: "input" | "node" | "output"; index: number };
 }
 
+export type RewireSource = "user" | "minor" | "major" | "catastrophic";
+
 interface PanelState {
   connections: WireConnection[];
+  rewireSource?: RewireSource; // Track what caused the current rewire state
 }
 
 export interface EngineeringPanels {
@@ -300,11 +303,32 @@ export const engineeringSlice = createSlice({
       action: PayloadAction<{
         panelName: string;
         connections: WireConnection[];
+        source?: RewireSource;
+        currentPlayer?: "Gobi" | "Ben";
       }>
     ) => {
-      const { panelName, connections } = action.payload;
+      const { panelName, connections, source, currentPlayer = "Gobi" } = action.payload;
       if (state.panels[panelName]) {
-        state.panels[panelName].connections = connections;
+        const currentPanel = state.panels[panelName];
+        const correctPanel = state.correctState[currentPlayer][panelName];
+        
+        // Check if panel is being fixed (connections match correct state)
+        const isFixed = correctPanel && 
+          connections.length === correctPanel.connections.length &&
+          countIncorrectConnections(connections, correctPanel.connections) === 0;
+        
+        // Update connections
+        currentPanel.connections = connections;
+        
+        // Update or clear rewire source
+        if (isFixed) {
+          // Panel is fixed, clear the rewire source
+          delete currentPanel.rewireSource;
+        } else if (source) {
+          // Panel has errors, set the rewire source
+          currentPanel.rewireSource = source;
+        }
+        // If no source provided and panel has errors, keep existing rewireSource
       }
     },
     resetEngineering: (

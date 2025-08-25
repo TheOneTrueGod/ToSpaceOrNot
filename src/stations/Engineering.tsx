@@ -169,6 +169,8 @@ export const Engineering: React.FC = () => {
         updatePanelConnections({
           panelName: openPanel,
           connections: updatedConnections,
+          source: "user" as const,
+          currentPlayer: currentPlayer,
         })
       );
     }
@@ -186,6 +188,8 @@ export const Engineering: React.FC = () => {
         updatePanelConnections({
           panelName: openPanel,
           connections: updatedConnections,
+          source: "user" as const,
+          currentPlayer: currentPlayer,
         })
       );
     }
