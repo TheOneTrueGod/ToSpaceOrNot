@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   AlertCircle,
   XCircle,
+  CheckCircle,
 } from "lucide-react";
 import { Asteroid } from "../store/stations/weaponsStore";
 import { disasterEventBus } from "../systems/DisasterEventBus";
@@ -22,16 +23,21 @@ export const StatusMonitor: React.FC = () => {
   const rocketCanvasRef = useRef<HTMLCanvasElement>(null);
   const asteroidCanvasRef = useRef<HTMLCanvasElement>(null);
   const asteroidAnglesRef = useRef<Map<string, number>>(new Map());
-  const [disasterAnimation, setDisasterAnimation] = useState<'slide' | 'shake' | null>(null);
+  const [disasterAnimation, setDisasterAnimation] = useState<
+    "slide" | "shake" | null
+  >(null);
 
   // Subscribe to disaster events
   useEffect(() => {
     const unsubscribe = disasterEventBus.subscribe((animation) => {
       setDisasterAnimation(animation);
       // Clear animation after it completes
-      setTimeout(() => setDisasterAnimation(null), animation === 'slide' ? 1000 : 500);
+      setTimeout(
+        () => setDisasterAnimation(null),
+        animation === "slide" ? 1000 : 500
+      );
     });
-    
+
     return unsubscribe;
   }, []);
 
@@ -97,6 +103,8 @@ export const StatusMonitor: React.FC = () => {
         return "text-orange-400 bg-orange-900/20 border-orange-500";
       case "Warning":
         return "text-yellow-400 bg-yellow-900/20 border-yellow-500";
+      case "Success":
+        return "text-green-400 bg-green-900/20 border-green-500";
       default:
         return "text-gray-400 bg-gray-900/20 border-gray-500";
     }
@@ -110,6 +118,8 @@ export const StatusMonitor: React.FC = () => {
         return <AlertCircle size={16} className="text-orange-400" />;
       case "Warning":
         return <AlertTriangle size={16} className="text-yellow-400" />;
+      case "Success":
+        return <CheckCircle size={16} className="text-green-400" />;
       default:
         return <AlertCircle size={16} className="text-gray-400" />;
     }
@@ -215,7 +225,6 @@ export const StatusMonitor: React.FC = () => {
 
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 h-full relative">
-
       {/* Rocket Animation with overlaid asteroids */}
       <div className="relative flex justify-center mb-4 mt-8">
         <canvas
@@ -236,12 +245,12 @@ export const StatusMonitor: React.FC = () => {
           showTrail={true}
           disasterAnimation={disasterAnimation}
         />
-        
+
         {/* Break overlay */}
         {shipState.isOnBreak && (
           <div className="absolute top-0 left-0 bg-green-500 bg-opacity-20 border-2 border-green-400 rounded px-3 py-1">
             <span className="text-green-400 font-mono text-sm font-semibold">
-              Taking a break
+              Waiting for Navigation Sync
             </span>
           </div>
         )}
@@ -342,7 +351,9 @@ export const StatusMonitor: React.FC = () => {
             {shipState.alerts.slice(0, 8).map((alert) => (
               <div
                 key={alert.id}
-                className={`p-2 rounded border ${getSeverityColor(alert.severity)}`}
+                className={`p-2 rounded border ${getSeverityColor(
+                  alert.severity
+                )}`}
               >
                 <div className="flex items-center space-x-2">
                   {getSeverityIcon(alert.severity)}

@@ -171,9 +171,11 @@ const FuelMixingGame: React.FC = () => {
     scienceState.fuelMixture.dumpAllCooldownUntil - currentGameSeconds
   );
 
-  // Calculate countdown to next mixture change
-  const secondsUntilNextChange =
-    20 - (currentGameSeconds - scienceState.fuelMixture.lastChangeTime);
+  // Calculate countdown to next mixture change based on Unix timestamp
+  const now = Date.now() / 1000; // Convert to seconds
+  const currentPeriod = Math.floor(now / 20) * 20; // Round down to nearest 20-second period
+  const nextPeriod = currentPeriod + 20;
+  const secondsUntilNextChange = Math.ceil(nextPeriod - now);
 
   useEffect(() => {
     dispatch(

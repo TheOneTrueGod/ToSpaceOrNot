@@ -146,9 +146,29 @@ const shipSlice = createSlice({
     resetShipState: () => initialState,
     startBreak: (state) => {
       state.isOnBreak = true;
+      
+      // Add nav sync waiting alert
+      const navSyncAlert: Alert = {
+        id: `nav-sync-${Date.now()}`,
+        name: "Waiting for Nav Sync",
+        timestamp: state.gameClock,
+        description: "Ship movement paused at quadrant boundary. Waiting for navigation synchronization.",
+        severity: "Success",
+        owner: Players.PLAYER_ONE,
+        systemEffects: [],
+        isActive: true,
+        type: "automatic",
+      };
+      
+      // Remove any existing nav sync alert first
+      state.alerts = state.alerts.filter(alert => alert.name !== "Waiting for Nav Sync");
+      state.alerts.push(navSyncAlert);
     },
     resumeJourney: (state) => {
       state.isOnBreak = false;
+      
+      // Remove nav sync waiting alert
+      state.alerts = state.alerts.filter(alert => alert.name !== "Waiting for Nav Sync");
     },
   },
 });

@@ -261,27 +261,38 @@ export const scienceSlice = createSlice({
     },
     
     updateCorrectMixtures: (state, action: PayloadAction<{ currentGameSeconds: number, mixtureLength: number }>) => {
-      const { currentGameSeconds, mixtureLength } = action.payload;
-      const timeSinceLastChange = currentGameSeconds - state.fuelMixture.lastChangeTime;
+      const { mixtureLength } = action.payload;
       
-      // Change mixture every 20 seconds
-      if (timeSinceLastChange >= 20) {
-        const numChanges = Math.floor(timeSinceLastChange / 20);
-        
-        // Store the current mixture as the previous before generating new ones
-        state.fuelMixture.previousCorrectMixture.ownShip = [...state.fuelMixture.correctMixture.ownShip];
-        state.fuelMixture.previousCorrectMixture.otherShip = [...state.fuelMixture.correctMixture.otherShip];
-        
-        // Generate new mixtures
-        state.randomSeeds.ownShip += numChanges * 1000;
-        state.randomSeeds.otherShip += numChanges * 1000;
-        
-        state.fuelMixture.correctMixture.ownShip = generateFuelMixture(state.randomSeeds.ownShip, mixtureLength);
-        state.fuelMixture.correctMixture.otherShip = generateFuelMixture(state.randomSeeds.otherShip, mixtureLength);
-        
-        state.fuelMixture.lastChangeTime = currentGameSeconds - (currentGameSeconds % 20);
-        state.fuelMixture.changeCount += numChanges;
-      }
+      // Use Unix timestamp rounded to nearest 20 seconds
+      const now = Date.now() / 1000; // Convert to seconds
+      const currentPeriod = Math.floor(now / 20) * 20; // Round down to nearest 20-second period
+      const previousPeriod = currentPeriod - 20;
+      
+      // Generate seeds based on the time periods
+      const currentOwnShipSeed = 12345 + currentPeriod;
+      const currentOtherShipSeed = 67890 + currentPeriod;
+      const previousOwnShipSeed = 12345 + previousPeriod;
+      const previousOtherShipSeed = 67890 + previousPeriod;
+      
+      // Generate current mixtures
+      const newOwnShip = generateFuelMixture(currentOwnShipSeed, mixtureLength);
+      const newOtherShip = generateFuelMixture(currentOtherShipSeed, mixtureLength);
+      
+      // Generate previous mixtures
+      const prevOwnShip = generateFuelMixture(previousOwnShipSeed, mixtureLength);
+      const prevOtherShip = generateFuelMixture(previousOtherShipSeed, mixtureLength);
+      
+      // Update state
+      state.fuelMixture.correctMixture.ownShip = newOwnShip;
+      state.fuelMixture.correctMixture.otherShip = newOtherShip;
+      state.fuelMixture.previousCorrectMixture.ownShip = prevOwnShip;
+      state.fuelMixture.previousCorrectMixture.otherShip = prevOtherShip;
+      
+      // Update tracking values
+      state.fuelMixture.lastChangeTime = currentPeriod;
+      state.fuelMixture.changeCount = Math.floor(currentPeriod / 20);
+      state.randomSeeds.ownShip = currentOwnShipSeed;
+      state.randomSeeds.otherShip = currentOtherShipSeed;
     },
     
     setPulseFrequency: (state, action: PayloadAction<{ correct?: number, current?: number }>) => {

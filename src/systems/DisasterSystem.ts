@@ -426,6 +426,33 @@ export const DISASTER_TYPES: Record<string, DisasterType> = {
       );
     },
   },
+  SABOTAGE: {
+    id: "SABOTAGE",
+    name: "Sabotage",
+    severity: "catastrophic",
+    execute: () => {
+      const state = store.getState();
+      const engineering = state.engineering;
+      const currentPlayer = state.game?.currentPlayer || Players.PLAYER_ONE;
+
+      // Remove all connections from all engineering panels
+      Object.keys(engineering.panels).forEach((panelName) => {
+        store.dispatch(
+          updatePanelConnections({
+            panelName: panelName,
+            connections: [], // Remove all connections
+            source: "catastrophic",
+            currentPlayer: currentPlayer,
+          })
+        );
+      });
+
+      // Spawn 5 medium asteroids
+      DisasterEvents.spawnAsteroids(5, 0, 5, 0, 1.2); // 5 medium asteroids, spawn 20% farther away
+
+      console.log("💥 Sabotage disaster: All engineering connections removed and 5 medium asteroids spawned");
+    },
+  },
 };
 
 // Quadrant-to-disaster mapping with weights
@@ -465,6 +492,7 @@ export const QUADRANT_DISASTER_WEIGHTS: Record<Quadrant, DisasterWeight[]> = {
     { disasterId: "CATASTROPHIC_REWIRE", weight: 2 },
     { disasterId: "THREE_MINORS", weight: 3 },
     { disasterId: "ASTEROID_CLUSTER", weight: 4 },
+    { disasterId: "SABOTAGE", weight: 2 },
   ],
   [Quadrant.Delta]: [
     // Predominantly catastrophic disasters in Delta Quadrant
@@ -474,6 +502,7 @@ export const QUADRANT_DISASTER_WEIGHTS: Record<Quadrant, DisasterWeight[]> = {
     { disasterId: "CATASTROPHIC_REWIRE", weight: 6 },
     { disasterId: "THREE_MINORS", weight: 5 },
     { disasterId: "ASTEROID_CLUSTER", weight: 7 },
+    { disasterId: "SABOTAGE", weight: 5 },
   ],
 };
 
