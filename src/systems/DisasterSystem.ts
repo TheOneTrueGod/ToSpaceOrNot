@@ -450,7 +450,9 @@ export const DISASTER_TYPES: Record<string, DisasterType> = {
       // Spawn 5 medium asteroids
       DisasterEvents.spawnAsteroids(5, 0, 5, 0, 1.2); // 5 medium asteroids, spawn 20% farther away
 
-      console.log("💥 Sabotage disaster: All engineering connections removed and 5 medium asteroids spawned");
+      console.log(
+        "💥 Sabotage disaster: All engineering connections removed and 5 medium asteroids spawned"
+      );
     },
   },
 };
@@ -587,8 +589,8 @@ export class DisasterSystem {
   }
 
   private scheduleNextDisaster(currentTime: number): void {
-    // Schedule next disaster 10-30 seconds from now
-    const delay = 10 + Math.random() * 20;
+    // Schedule next disaster 30-60 seconds from now
+    const delay = 30 + Math.random() * 30;
     this.nextDisasterTime = currentTime + delay;
     this.lastDisasterTime = currentTime;
   }

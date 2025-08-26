@@ -277,7 +277,7 @@ export const StatusMonitor: React.FC = () => {
                 ? "yellow"
                 : "green"
             )}
-            {renderProgressBar(
+            {/*renderProgressBar(
               "O2",
               shipState.oxygenLevels.current,
               shipState.oxygenLevels.max,
@@ -286,7 +286,7 @@ export const StatusMonitor: React.FC = () => {
                 : shipState.oxygenLevels.current < 60
                 ? "yellow"
                 : "green"
-            )}
+            )*/}
             {renderProgressBar(
               "FUEL",
               shipState.fuelLevels.current,

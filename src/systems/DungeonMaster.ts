@@ -15,7 +15,11 @@ import { AlertSystem } from "./AlertSystem";
 import { AutomaticAlertSystem } from "./AutomaticAlertSystem";
 import { DisasterSystem } from "./DisasterSystem";
 import { removeAsteroid } from "../store/stations/weaponsStore";
-import { NavigationState, getCurrentNavigationStage, updateNavigationStage } from "../store/stations/navigationStore";
+import {
+  NavigationState,
+  getCurrentNavigationStage,
+  updateNavigationStage,
+} from "../store/stations/navigationStore";
 import {
   getThrustPenaltyMultiplier,
   getFuelPenaltyMultiplier,
@@ -23,7 +27,10 @@ import {
   getWeaponsPenaltyMultiplier,
   countIncorrectConnections,
 } from "../store/stations/engineeringStore";
-import { isPulseFrequencyCorrect, PULSE_FREQUENCY_ENABLED } from "../store/stations/scienceStore";
+import {
+  isPulseFrequencyCorrect,
+  PULSE_FREQUENCY_ENABLED,
+} from "../store/stations/scienceStore";
 
 export class DungeonMaster {
   private gameTimer: number | null = null;
@@ -42,21 +49,26 @@ export class DungeonMaster {
       return 0;
     }
 
-    let speed = 2; // Base speed
+    let speed = 1; // Base speed
 
     // Check navigation alignment - need current player to determine correct values
     const currentPlayer = state.game?.currentPlayer || Players.PLAYER_ONE;
-    const navErrors = this.countNavigationErrors(navigationState, currentPlayer);
+    const navErrors = this.countNavigationErrors(
+      navigationState,
+      currentPlayer
+    );
     if (navErrors === 1) {
-      speed -= 1; // One navigation number incorrect
+      speed -= 0.5; // One navigation number incorrect
     } else if (navErrors >= 2) {
-      speed -= 2; // Two or more navigation numbers incorrect
+      speed -= 1; // Two or more navigation numbers incorrect
     }
-
 
     // Apply engineering thrust penalty
     if (engineeringState) {
-      const thrustPenalty = getThrustPenaltyMultiplier(engineeringState, currentPlayer);
+      const thrustPenalty = getThrustPenaltyMultiplier(
+        engineeringState,
+        currentPlayer
+      );
       speed /= thrustPenalty;
     }
 
@@ -72,27 +84,23 @@ export class DungeonMaster {
 
     let errors = 0;
     const tolerance = 0.1; // Small tolerance for floating point comparison
-    
+
     // Get the correct values for the current player
-    const correctValues = currentPlayer === Players.PLAYER_ONE 
-      ? navigationState.correctValues.albatross 
-      : navigationState.correctValues.kestrel;
+    const correctValues =
+      currentPlayer === Players.PLAYER_ONE
+        ? navigationState.correctValues.albatross
+        : navigationState.correctValues.kestrel;
 
     if (
-      Math.abs(navigationState.current.pitch - correctValues.pitch) >
-      tolerance
+      Math.abs(navigationState.current.pitch - correctValues.pitch) > tolerance
     ) {
       errors++;
     }
-    if (
-      Math.abs(navigationState.current.yaw - correctValues.yaw) >
-      tolerance
-    ) {
+    if (Math.abs(navigationState.current.yaw - correctValues.yaw) > tolerance) {
       errors++;
     }
     if (
-      Math.abs(navigationState.current.roll - correctValues.roll) >
-      tolerance
+      Math.abs(navigationState.current.roll - correctValues.roll) > tolerance
     ) {
       errors++;
     }
@@ -113,9 +121,18 @@ export class DungeonMaster {
         name: "Weapons",
         penalty: getWeaponsPenaltyMultiplier(engineeringState, currentPlayer),
       },
-      { name: "Fuel", penalty: getFuelPenaltyMultiplier(engineeringState, currentPlayer) },
-      { name: "Power", penalty: getPowerPenaltyMultiplier(engineeringState, currentPlayer) },
-      { name: "Thrust", penalty: getThrustPenaltyMultiplier(engineeringState, currentPlayer) },
+      {
+        name: "Fuel",
+        penalty: getFuelPenaltyMultiplier(engineeringState, currentPlayer),
+      },
+      {
+        name: "Power",
+        penalty: getPowerPenaltyMultiplier(engineeringState, currentPlayer),
+      },
+      {
+        name: "Thrust",
+        penalty: getThrustPenaltyMultiplier(engineeringState, currentPlayer),
+      },
     ];
 
     malfunctionSystems.forEach((system) => {
@@ -156,11 +173,12 @@ export class DungeonMaster {
 
     // Track which stations have errors
     const stationsWithErrors: string[] = [];
-    
+
     for (const panelName of Object.keys(engineeringState.panels)) {
       const currentPanel = engineeringState.panels[panelName];
-      const correctPanel = engineeringState.correctState[currentPlayer][panelName];
-      
+      const correctPanel =
+        engineeringState.correctState[currentPlayer][panelName];
+
       if (currentPanel && correctPanel) {
         const incorrectCount = countIncorrectConnections(
           currentPanel.connections,
@@ -227,13 +245,15 @@ export class DungeonMaster {
     const engineeringState = currentState.engineering;
     const scienceState = currentState.science;
 
-    const currentPlayer = currentState.game?.currentPlayer || Players.PLAYER_ONE;
+    const currentPlayer =
+      currentState.game?.currentPlayer || Players.PLAYER_ONE;
     const engineeringPenalty = engineeringState
       ? getPowerPenaltyMultiplier(engineeringState, currentPlayer)
       : 1;
-    const scienceCorrect = scienceState && PULSE_FREQUENCY_ENABLED
-      ? isPulseFrequencyCorrect(scienceState)
-      : true;
+    const scienceCorrect =
+      scienceState && PULSE_FREQUENCY_ENABLED
+        ? isPulseFrequencyCorrect(scienceState)
+        : true;
 
     // Process game tick (power restoration, etc.)
     store.dispatch(gameTick({ engineeringPenalty, scienceCorrect }));
@@ -249,16 +269,23 @@ export class DungeonMaster {
 
     // Check for disasters
     const gameTime = state.gameClock.minutes * 60 + state.gameClock.seconds;
-    const distanceTraveled = state.distanceToDestination.max - state.distanceToDestination.current;
-    this.disasterSystem.checkForDisaster(gameTime, distanceTraveled, state.isOnBreak);
+    const distanceTraveled =
+      state.distanceToDestination.max - state.distanceToDestination.current;
+    this.disasterSystem.checkForDisaster(
+      gameTime,
+      distanceTraveled,
+      state.isOnBreak
+    );
 
     // Update distance travelled based on speed (only if not on break)
     const currentShipState = store.getState().ship;
     if (!currentShipState.isOnBreak) {
       const speed = this.calculateShipSpeed();
       if (speed > 0) {
-        const distanceTraveled = currentShipState.distanceToDestination.max - currentShipState.distanceToDestination.current;
-        
+        const distanceTraveled =
+          currentShipState.distanceToDestination.max -
+          currentShipState.distanceToDestination.current;
+
         store.dispatch(
           updateSystemValue({
             system: "distanceToDestination",
@@ -270,12 +297,15 @@ export class DungeonMaster {
         // Check if we've reached a break point
         const newDistanceTraveled = distanceTraveled + speed;
         for (const breakPoint of BREAK_POINTS) {
-          if (distanceTraveled < breakPoint && newDistanceTraveled >= breakPoint) {
+          if (
+            distanceTraveled < breakPoint &&
+            newDistanceTraveled >= breakPoint
+          ) {
             store.dispatch(startBreak());
             break;
           }
         }
-        
+
         // Update navigation stage based on distance traveled
         const currentStage = getCurrentNavigationStage(distanceTraveled);
         const newStage = getCurrentNavigationStage(newDistanceTraveled);
@@ -291,8 +321,13 @@ export class DungeonMaster {
       let fuelConsumption = baselineFuelConsumption;
 
       if (engineeringState) {
-        const currentPlayer = currentShipState.gameClock ? store.getState().game?.currentPlayer || Players.PLAYER_ONE : Players.PLAYER_ONE;
-        const fuelPenalty = getFuelPenaltyMultiplier(engineeringState, currentPlayer);
+        const currentPlayer = currentShipState.gameClock
+          ? store.getState().game?.currentPlayer || Players.PLAYER_ONE
+          : Players.PLAYER_ONE;
+        const fuelPenalty = getFuelPenaltyMultiplier(
+          engineeringState,
+          currentPlayer
+        );
         fuelConsumption *= fuelPenalty;
       }
 
