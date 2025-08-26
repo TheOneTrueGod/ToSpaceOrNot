@@ -25,7 +25,7 @@ export const HomePage: React.FC = () => {
       </h1>
 
       {/* Rocket Animation */}
-      <div className="mb-12">
+      <div className="mb-8">
         <canvas
           ref={rocketCanvasRef}
           width={400}
@@ -37,6 +37,18 @@ export const HomePage: React.FC = () => {
           size="large"
           showTrail={true}
         />
+      </div>
+
+      {/* Welcome Description */}
+      <div className="mb-12 max-w-2xl text-center">
+        <p className="text-lg text-gray-200 leading-relaxed">
+          Welcome to Starship Command!
+          <br />
+          This is a two player game that involves communication to solve
+          problems on your ships.
+          <br />
+          Make sure that both of you choose a different ship, and good luck!
+        </p>
       </div>
 
       {/* Player Selection */}
