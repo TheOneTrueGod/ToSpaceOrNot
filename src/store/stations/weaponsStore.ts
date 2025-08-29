@@ -11,9 +11,9 @@ export const WEAPON_COLORS: Record<WeaponType, string> = {
 };
 
 export const WEAPON_POWER_REQUIREMENTS: Record<WeaponType, number> = {
-  Phasers: 15,
-  Missiles: 15,
-  Railgun: 15,
+  Phasers: 30,
+  Missiles: 30,
+  Railgun: 30,
 };
 
 export const MATERIAL_WEAKNESS: Record<MaterialType, WeaponType> = {

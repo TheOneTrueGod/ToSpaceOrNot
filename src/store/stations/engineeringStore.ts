@@ -135,7 +135,7 @@ export const PENALTY_CONFIG = {
   HEAVY_THRESHOLD: 5,
   LIGHT_MULTIPLIER: 1.5,
   MEDIUM_MULTIPLIER: 2,
-  HEAVY_MULTIPLIER: 3,
+  HEAVY_MULTIPLIER: 5,
 };
 
 export const generateEngineeringState = (

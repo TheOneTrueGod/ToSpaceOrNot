@@ -2,7 +2,6 @@ import { store } from "../store";
 import { Players } from "../types";
 import {
   advanceTime,
-  addAlert,
   removeAlert,
   setAutomaticAlerts,
   gameTick,
@@ -24,8 +23,6 @@ import {
   getThrustPenaltyMultiplier,
   getFuelPenaltyMultiplier,
   getPowerPenaltyMultiplier,
-  getWeaponsPenaltyMultiplier,
-  countIncorrectConnections,
 } from "../store/stations/engineeringStore";
 import {
   isPulseFrequencyCorrect,
@@ -110,118 +107,6 @@ export class DungeonMaster {
     return errors;
   }
 
-  private checkEngineeringMalfunctions() {
-    const state = store.getState();
-    const engineeringState = state.engineering;
-    const currentAlerts = state.ship.alerts;
-
-    if (!engineeringState) return;
-
-    const currentPlayer = state.game?.currentPlayer || Players.PLAYER_ONE;
-    const malfunctionSystems = [
-      {
-        name: "Weapons",
-        penalty: getWeaponsPenaltyMultiplier(engineeringState, currentPlayer),
-      },
-      {
-        name: "Fuel",
-        penalty: getFuelPenaltyMultiplier(engineeringState, currentPlayer),
-      },
-      {
-        name: "Power",
-        penalty: getPowerPenaltyMultiplier(engineeringState, currentPlayer),
-      },
-      {
-        name: "Thrust",
-        penalty: getThrustPenaltyMultiplier(engineeringState, currentPlayer),
-      },
-    ];
-
-    malfunctionSystems.forEach((system) => {
-      const alertName = `${system.name} Malfunction`;
-      const hasAlert = currentAlerts.some(
-        (alert) => alert.name === alertName && alert.isActive
-      );
-
-      if (system.penalty >= 2.0 && !hasAlert) {
-        // Add malfunction alert
-        const malfunctionAlert = AlertSystem.createAlert(
-          alertName,
-          `${system.name} system experiencing significant malfunctions due to engineering panel damage.`,
-          "Danger",
-          Players.PLAYER_ONE, // Default owner, could be made configurable
-          [],
-          "automatic"
-        );
-        store.dispatch(addAlert(malfunctionAlert));
-      } else if (system.penalty < 2.0 && hasAlert) {
-        // Remove malfunction alert
-        const alertToRemove = currentAlerts.find(
-          (alert) => alert.name === alertName && alert.isActive
-        );
-        if (alertToRemove) {
-          store.dispatch(removeAlert(alertToRemove.id));
-        }
-      }
-    });
-
-    // Check for individual station wiring error alerts (yellow warnings)
-    const stationMapping: { [panelName: string]: string } = {
-      A1b2: "Weapons",
-      Xy9Z: "Thrust",
-      "3Fp7": "Fuel",
-      Q8wS: "Power",
-    };
-
-    // Track which stations have errors
-    const stationsWithErrors: string[] = [];
-
-    for (const panelName of Object.keys(engineeringState.panels)) {
-      const currentPanel = engineeringState.panels[panelName];
-      const correctPanel =
-        engineeringState.correctState[currentPlayer][panelName];
-
-      if (currentPanel && correctPanel) {
-        const incorrectCount = countIncorrectConnections(
-          currentPanel.connections,
-          correctPanel.connections
-        );
-        if (incorrectCount > 0 && stationMapping[panelName]) {
-          stationsWithErrors.push(stationMapping[panelName]);
-        }
-      }
-    }
-
-    // Create or remove alerts for each station
-    ["Weapons", "Thrust", "Fuel", "Power"].forEach((stationName) => {
-      const alertName = `${stationName} Wiring Error`;
-      const hasAlert = currentAlerts.some(
-        (alert) => alert.name === alertName && alert.isActive
-      );
-      const hasError = stationsWithErrors.includes(stationName);
-
-      if (hasError && !hasAlert) {
-        // Add station-specific wiring error alert
-        const wiringAlert = AlertSystem.createAlert(
-          alertName,
-          `${stationName} panel has incorrect wiring connections. Check panel for errors.`,
-          "Warning",
-          Players.PLAYER_ONE, // Default owner, could be made configurable
-          [],
-          "automatic"
-        );
-        store.dispatch(addAlert(wiringAlert));
-      } else if (!hasError && hasAlert) {
-        // Remove station-specific wiring error alert
-        const alertToRemove = currentAlerts.find(
-          (alert) => alert.name === alertName && alert.isActive
-        );
-        if (alertToRemove) {
-          store.dispatch(removeAlert(alertToRemove.id));
-        }
-      }
-    });
-  }
 
   start() {
     this.gameTimer = setInterval(() => {
@@ -265,7 +150,9 @@ export class DungeonMaster {
     const automaticAlerts = this.automaticAlertSystem.generateAlerts(
       alertsState.ship,
       alertsState.weapons,
-      alertsState.navigation
+      alertsState.navigation,
+      alertsState.engineering,
+      currentPlayer
     );
     store.dispatch(setAutomaticAlerts(automaticAlerts));
 
@@ -323,9 +210,6 @@ export class DungeonMaster {
       let fuelConsumption = baselineFuelConsumption;
 
       if (engineeringState) {
-        const currentPlayer = currentShipState.gameClock
-          ? store.getState().game?.currentPlayer || Players.PLAYER_ONE
-          : Players.PLAYER_ONE;
         const fuelPenalty = getFuelPenaltyMultiplier(
           engineeringState,
           currentPlayer
@@ -377,9 +261,6 @@ export class DungeonMaster {
 
     // Check for alert resolutions
     this.checkAlertResolutions();
-
-    // Check for engineering malfunctions
-    this.checkEngineeringMalfunctions();
   }
 
   private checkTimedAlerts(gameTime: number) {

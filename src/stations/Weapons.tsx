@@ -7,13 +7,14 @@ import {
   WEAPON_POWER_REQUIREMENTS,
   setWeaponCooldown,
   popAsteroidLayer,
-  hasEnoughPower,
   WeaponType,
   Asteroid
 } from '../store/stations/weaponsStore';
 import { updateSystemValue } from '../store/shipStore';
 import { getWeaponsPenaltyMultiplier } from '../store/stations/engineeringStore';
 import { Players } from '../types';
+import { AutomaticAlertSystem } from '../systems/AutomaticAlertSystem';
+import { AlertTriangle, AlertCircle, AlertOctagon } from 'lucide-react';
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 400;
@@ -34,17 +35,16 @@ export const Weapons: React.FC = () => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Pick target asteroid by rule: least time remaining to impact and matching weakness on outer layer
-  const getTargetAsteroid = useCallback(
-    (weapon: WeaponType): Asteroid | undefined => {
-      const matching = asteroids
+  // Get all target asteroids with matching weakness on outer layer
+  const getTargetAsteroids = useCallback(
+    (weapon: WeaponType): Asteroid[] => {
+      return asteroids
         .filter(a => a.layers.length > 0 && MATERIAL_WEAKNESS[a.layers[0]] === weapon)
         .sort((a, b) => {
           const ta = toTotalSeconds(a.impactAt) - nowSeconds;
           const tb = toTotalSeconds(b.impactAt) - nowSeconds;
           return ta - tb;
         });
-      return matching[0];
     },
     [asteroids, nowSeconds]
   );
@@ -62,8 +62,8 @@ export const Weapons: React.FC = () => {
       return; // Not enough power to fire
     }
 
-    const target = getTargetAsteroid(weapon);
-    if (!target) {
+    const targets = getTargetAsteroids(weapon);
+    if (targets.length === 0) {
       // Consume power even on miss
       dispatch(updateSystemValue({ 
         system: 'batteryPower', 
@@ -80,9 +80,11 @@ export const Weapons: React.FC = () => {
     }));
 
     // 200ms laser animation then apply effect and set 1s cooldown
-    drawLaserOnce(weapon, target);
+    drawLasers(weapon, targets);
     window.setTimeout(() => {
-      dispatch(popAsteroidLayer({ asteroidId: target.id }));
+      targets.forEach(target => {
+        dispatch(popAsteroidLayer({ asteroidId: target.id }));
+      });
       dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 1, currentGameSeconds: nowSeconds + 1, engineeringPenalty: weaponsPenalty }));
     }, 200);
   };
@@ -146,20 +148,22 @@ export const Weapons: React.FC = () => {
     }
   }, [nowSeconds]);
 
-  const drawLaserOnce = (weapon: WeaponType, target: Asteroid) => {
+  const drawLasers = (weapon: WeaponType, targets: Asteroid[]) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Draw a quick laser line from bottom center to target center
+    // Draw laser lines from bottom center to all target centers
     ctx.save();
     ctx.strokeStyle = WEAPON_COLORS[weapon];
     ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(CANVAS_WIDTH / 2, CANVAS_HEIGHT - 10);
-    ctx.lineTo(target.position.x, target.position.y);
-    ctx.stroke();
+    targets.forEach(target => {
+      ctx.beginPath();
+      ctx.moveTo(CANVAS_WIDTH / 2, CANVAS_HEIGHT - 10);
+      ctx.lineTo(target.position.x, target.position.y);
+      ctx.stroke();
+    });
     ctx.restore();
   };
 
@@ -194,6 +198,36 @@ export const Weapons: React.FC = () => {
     ],
     []
   );
+
+  // Get weapons-specific alerts
+  const alertSystem = AutomaticAlertSystem.getInstance();
+  const weaponsAlerts = alertSystem.getWeaponsAlerts(
+    engineeringState,
+    currentPlayer || Players.PLAYER_ONE,
+    batteryPower
+  );
+
+  const getAlertIcon = (severity: 'Warning' | 'Danger' | 'Critical') => {
+    switch (severity) {
+      case 'Critical':
+        return <AlertOctagon className="w-5 h-5" />;
+      case 'Danger':
+        return <AlertTriangle className="w-5 h-5" />;
+      default:
+        return <AlertCircle className="w-5 h-5" />;
+    }
+  };
+
+  const getAlertColor = (severity: 'Warning' | 'Danger' | 'Critical') => {
+    switch (severity) {
+      case 'Critical':
+        return 'bg-red-500/20 border-red-500 text-red-400';
+      case 'Danger':
+        return 'bg-orange-500/20 border-orange-500 text-orange-400';
+      default:
+        return 'bg-yellow-500/20 border-yellow-500 text-yellow-400';
+    }
+  };
 
   return (
     <div className="w-full">
@@ -245,6 +279,36 @@ export const Weapons: React.FC = () => {
             </button>
           );
         })}
+      </div>
+      
+      {/* Alerts Section */}
+      <div className="mt-4 space-y-2">
+        {weaponsAlerts.weaponsWiringError.active && (
+          <div className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(weaponsAlerts.weaponsWiringError.severity)}`}>
+            {getAlertIcon(weaponsAlerts.weaponsWiringError.severity)}
+            <span className="font-mono text-sm">
+              Weapons Wiring Error: Cooldowns increased by {Math.round((weaponsAlerts.weaponsWiringError.penalty - 1) * 100)}%
+            </span>
+          </div>
+        )}
+        
+        {weaponsAlerts.powerRegenerationSlow.active && (
+          <div className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(weaponsAlerts.powerRegenerationSlow.severity)}`}>
+            {getAlertIcon(weaponsAlerts.powerRegenerationSlow.severity)}
+            <span className="font-mono text-sm">
+              Power System Error: Regeneration slowed by {Math.round((weaponsAlerts.powerRegenerationSlow.penalty - 1) * 100)}%
+            </span>
+          </div>
+        )}
+        
+        {weaponsAlerts.powerLow && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded border bg-red-500/20 border-red-500 text-red-400">
+            <AlertOctagon className="w-5 h-5" />
+            <span className="font-mono text-sm">
+              Power Low: Unable to fire weapons
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
