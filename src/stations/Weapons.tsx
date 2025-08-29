@@ -69,7 +69,7 @@ export const Weapons: React.FC = () => {
         system: 'batteryPower', 
         value: -basePowerCost 
       }));
-      dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 1, currentGameSeconds: nowSeconds, engineeringPenalty: weaponsPenalty }));
+      dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 3, currentGameSeconds: nowSeconds, engineeringPenalty: weaponsPenalty }));
       return;
     }
 
@@ -285,35 +285,45 @@ export const Weapons: React.FC = () => {
             ? Math.max(0, Math.min(1, elapsed / totalDuration))
             : 1;
           
+          // Calculate the expected cooldown for this weapon type
+          // Weapons that hit have 3s cooldown, misses have 1s cooldown
+          // We'll show the hit cooldown (3s) as the expected default
+          const baseCooldown = 3; // seconds for successful hit
+          const expectedCooldown = Math.round(baseCooldown * weaponsPenalty);
+          
           return (
-            <button
-              key={btn.label}
-              onClick={() => fireWeapon(btn.label)}
-              className={`px-4 py-2 rounded font-mono text-white relative overflow-hidden transition-all ${
-                disabled ? 'opacity-60 cursor-not-allowed' : 'hover:brightness-110'
-              }`}
-              style={{ backgroundColor: btn.color }}
-              disabled={disabled}
-              title={
-                disabled 
-                  ? readyIn > 0 
-                    ? `Cooldown ${readyIn}s` 
-                    : `Insufficient power (${basePowerCost} required)`
-                  : `${btn.label} (${basePowerCost} power)`
-              }
-            >
-              {/* Cooldown progress bar overlay */}
-              {readyIn > 0 && (
-                <div
-                  className="absolute inset-0 bg-white opacity-30 transition-transform duration-100 ease-linear"
-                  style={{
-                    transform: `translateX(${(cooldownProgress - 1) * 100}%)`,
-                    width: '100%'
-                  }}
-                />
-              )}
-              <span className="relative z-10">{btn.label}</span>
-            </button>
+            <div key={btn.label} className="flex flex-col items-center">
+              <button
+                onClick={() => fireWeapon(btn.label)}
+                className={`px-4 py-2 rounded font-mono text-white relative overflow-hidden transition-all ${
+                  disabled ? 'opacity-60 cursor-not-allowed' : 'hover:brightness-110'
+                }`}
+                style={{ backgroundColor: btn.color }}
+                disabled={disabled}
+                title={
+                  disabled 
+                    ? readyIn > 0 
+                      ? `Cooldown ${readyIn}s` 
+                      : `Insufficient power (${basePowerCost} required)`
+                    : `${btn.label} (${basePowerCost} power)`
+                }
+              >
+                {/* Cooldown progress bar overlay */}
+                {readyIn > 0 && (
+                  <div
+                    className="absolute inset-0 bg-white opacity-30 transition-transform duration-100 ease-linear"
+                    style={{
+                      transform: `translateX(${(cooldownProgress - 1) * 100}%)`,
+                      width: '100%'
+                    }}
+                  />
+                )}
+                <span className="relative z-10">{btn.label}</span>
+              </button>
+              <span className="text-sky-400 text-sm font-mono mt-1">
+                {readyIn > 0 ? `${readyIn}s` : `${expectedCooldown}s cooldown`}
+              </span>
+            </div>
           );
         })}
       </div>

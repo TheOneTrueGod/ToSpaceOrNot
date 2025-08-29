@@ -339,20 +339,25 @@ const FuelMixingGame: React.FC = () => {
             ))}
           </div>
           <div className="flex justify-center mt-4">
-            <ButtonWithProgressBar
-              onClick={handleRefuel}
-              disabled={isRefuelOnCooldown}
-              label="Restock"
-              cooldownRemaining={refuelCooldownRemaining}
-              maxCooldown={REFUEL_COOLDOWN_SECONDS}
-              baseColor="bg-blue-600 hover:bg-blue-700"
-              showCooldownInLabel={false}
-              tooltip={
-                isRefuelOnCooldown
-                  ? `On cooldown: ${refuelCooldownRemaining}s remaining`
-                  : "Refill storage tubes with random fuel layers"
-              }
-            />
+            <div className="flex flex-col items-center">
+              <ButtonWithProgressBar
+                onClick={handleRefuel}
+                disabled={isRefuelOnCooldown}
+                label="Restock"
+                cooldownRemaining={refuelCooldownRemaining}
+                maxCooldown={REFUEL_COOLDOWN_SECONDS}
+                baseColor="bg-blue-600 hover:bg-blue-700"
+                showCooldownInLabel={false}
+                tooltip={
+                  isRefuelOnCooldown
+                    ? `On cooldown: ${refuelCooldownRemaining}s remaining`
+                    : "Refill storage tubes with random fuel layers"
+                }
+              />
+              <span className="text-sky-400 text-sm font-mono mt-1">
+                {isRefuelOnCooldown ? `${refuelCooldownRemaining}s` : `${REFUEL_COOLDOWN_SECONDS}s cooldown`}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -369,47 +374,55 @@ const FuelMixingGame: React.FC = () => {
           </div>
 
           <div className="flex flex-col h-full gap-4">
-            <ButtonWithProgressBar
-              onClick={handleDump}
-              disabled={
-                isDumpOnCooldown ||
-                scienceState.fuelMixture.activeTube.layers.length === 0
-              }
-              label="Dump one"
-              cooldownRemaining={dumpCooldownRemaining}
-              maxCooldown={DUMP_COOLDOWN_SECONDS}
-              baseColor="bg-orange-600 hover:bg-orange-700"
-              className="mt-auto"
-              showCooldownInLabel={false}
-              tooltip={
-                isDumpOnCooldown
-                  ? `On cooldown: ${dumpCooldownRemaining}s remaining`
-                  : scienceState.fuelMixture.activeTube.layers.length === 0
-                  ? "Active tube is empty"
-                  : "Remove the top layer from the active tube"
-              }
-            />
+            <div className="flex flex-col items-center mt-auto">
+              <ButtonWithProgressBar
+                onClick={handleDump}
+                disabled={
+                  isDumpOnCooldown ||
+                  scienceState.fuelMixture.activeTube.layers.length === 0
+                }
+                label="Dump one"
+                cooldownRemaining={dumpCooldownRemaining}
+                maxCooldown={DUMP_COOLDOWN_SECONDS}
+                baseColor="bg-orange-600 hover:bg-orange-700"
+                showCooldownInLabel={false}
+                tooltip={
+                  isDumpOnCooldown
+                    ? `On cooldown: ${dumpCooldownRemaining}s remaining`
+                    : scienceState.fuelMixture.activeTube.layers.length === 0
+                    ? "Active tube is empty"
+                    : "Remove the top layer from the active tube"
+                }
+              />
+              <span className="text-sky-400 text-sm font-mono mt-1">
+                {isDumpOnCooldown ? `${dumpCooldownRemaining}s` : `${DUMP_COOLDOWN_SECONDS}s cooldown`}
+              </span>
+            </div>
 
-            <ButtonWithProgressBar
-              onClick={handleDumpAll}
-              disabled={
-                isDumpAllOnCooldown ||
-                scienceState.fuelMixture.activeTube.layers.length === 0
-              }
-              label="Dump all"
-              cooldownRemaining={dumpAllCooldownRemaining}
-              maxCooldown={DUMP_ALL_COOLDOWN_SECONDS}
-              baseColor="bg-red-600 hover:bg-red-700"
-              className="mb-auto"
-              showCooldownInLabel={false}
-              tooltip={
-                isDumpAllOnCooldown
-                  ? `On cooldown: ${dumpAllCooldownRemaining}s remaining`
-                  : scienceState.fuelMixture.activeTube.layers.length === 0
-                  ? "Active tube is empty"
-                  : "Remove all layers from the active tube"
-              }
-            />
+            <div className="flex flex-col items-center mb-auto pt-4">
+              <ButtonWithProgressBar
+                onClick={handleDumpAll}
+                disabled={
+                  isDumpAllOnCooldown ||
+                  scienceState.fuelMixture.activeTube.layers.length === 0
+                }
+                label="Dump all"
+                cooldownRemaining={dumpAllCooldownRemaining}
+                maxCooldown={DUMP_ALL_COOLDOWN_SECONDS}
+                baseColor="bg-red-600 hover:bg-red-700"
+                showCooldownInLabel={false}
+                tooltip={
+                  isDumpAllOnCooldown
+                    ? `On cooldown: ${dumpAllCooldownRemaining}s remaining`
+                    : scienceState.fuelMixture.activeTube.layers.length === 0
+                    ? "Active tube is empty"
+                    : "Remove all layers from the active tube"
+                }
+              />
+              <span className="text-sky-400 text-sm font-mono mt-1">
+                {isDumpAllOnCooldown ? `${dumpAllCooldownRemaining}s` : `${DUMP_ALL_COOLDOWN_SECONDS}s cooldown`}
+              </span>
+            </div>
           </div>
         </div>
 
