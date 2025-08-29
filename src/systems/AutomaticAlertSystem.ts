@@ -8,7 +8,6 @@ import {
   getFuelPenaltyMultiplier,
   getPowerPenaltyMultiplier,
   getWeaponsPenaltyMultiplier,
-  countIncorrectConnections,
 } from '../store/stations/engineeringStore';
 
 export class AutomaticAlertSystem {
@@ -20,63 +19,6 @@ export class AutomaticAlertSystem {
       AutomaticAlertSystem.instance = new AutomaticAlertSystem();
     }
     return AutomaticAlertSystem.instance;
-  }
-
-  // Get specific weapons-related alerts
-  getWeaponsAlerts(
-    engineeringState: EngineeringState | undefined,
-    currentPlayer: string,
-    batteryPower: { current: number; max: number }
-  ): { 
-    weaponsWiringError: { active: boolean; penalty: number; severity: 'Warning' | 'Danger' | 'Critical' };
-    powerRegenerationSlow: { active: boolean; penalty: number; severity: 'Warning' | 'Danger' | 'Critical' };
-    powerLow: boolean;
-  } {
-    const result = {
-      weaponsWiringError: { active: false, penalty: 1, severity: 'Warning' as 'Warning' | 'Danger' | 'Critical' },
-      powerRegenerationSlow: { active: false, penalty: 1, severity: 'Warning' as 'Warning' | 'Danger' | 'Critical' },
-      powerLow: false
-    };
-
-    if (!engineeringState) return result;
-
-    // Check weapons wiring error and its penalty
-    const weaponsPenalty = getWeaponsPenaltyMultiplier(engineeringState, currentPlayer as typeof Players.PLAYER_ONE);
-    if (weaponsPenalty > 1.0) {
-      result.weaponsWiringError.active = true;
-      result.weaponsWiringError.penalty = weaponsPenalty;
-      
-      // Determine severity based on penalty multiplier
-      if (weaponsPenalty >= 2.0) {
-        result.weaponsWiringError.severity = 'Critical';
-      } else if (weaponsPenalty >= 1.5) {
-        result.weaponsWiringError.severity = 'Danger';
-      } else {
-        result.weaponsWiringError.severity = 'Warning';
-      }
-    }
-
-    // Check power regeneration penalty
-    const powerPenalty = getPowerPenaltyMultiplier(engineeringState, currentPlayer as typeof Players.PLAYER_ONE);
-    if (powerPenalty > 1.0) {
-      result.powerRegenerationSlow.active = true;
-      result.powerRegenerationSlow.penalty = powerPenalty;
-      
-      // Determine severity based on penalty multiplier
-      if (powerPenalty >= 2.0) {
-        result.powerRegenerationSlow.severity = 'Critical';
-      } else if (powerPenalty >= 1.5) {
-        result.powerRegenerationSlow.severity = 'Danger';
-      } else {
-        result.powerRegenerationSlow.severity = 'Warning';
-      }
-    }
-
-    // Check if power is too low to fire any weapon
-    // Minimum weapon power requirement is 5 (Phasers)
-    result.powerLow = batteryPower.current < 5;
-
-    return result;
   }
 
   private createAlert(
@@ -358,103 +300,105 @@ export class AutomaticAlertSystem {
     
     if (!engineeringState) return alerts;
 
-    // Check for system malfunctions (penalties >= 2.0)
-    const malfunctionSystems = [
+    // Define systems and their penalty functions
+    const systems = [
       {
         name: "Weapons",
         penalty: getWeaponsPenaltyMultiplier(engineeringState, currentPlayer as typeof Players.PLAYER_ONE),
-        alertId: 'weapons-malfunction'
+        warningId: 'weapons-warning',
+        dangerId: 'weapons-danger',
+        criticalId: 'weapons-critical'
       },
       {
         name: "Fuel",
         penalty: getFuelPenaltyMultiplier(engineeringState, currentPlayer as typeof Players.PLAYER_ONE),
-        alertId: 'fuel-malfunction'
+        warningId: 'fuel-warning',
+        dangerId: 'fuel-danger',
+        criticalId: 'fuel-critical-eng'
       },
       {
         name: "Power",
         penalty: getPowerPenaltyMultiplier(engineeringState, currentPlayer as typeof Players.PLAYER_ONE),
-        alertId: 'power-malfunction'
+        warningId: 'power-warning',
+        dangerId: 'power-danger',
+        criticalId: 'power-critical'
       },
       {
         name: "Thrust",
         penalty: getThrustPenaltyMultiplier(engineeringState, currentPlayer as typeof Players.PLAYER_ONE),
-        alertId: 'thrust-malfunction'
+        warningId: 'thrust-warning',
+        dangerId: 'thrust-danger',
+        criticalId: 'thrust-critical'
       },
     ];
 
-    malfunctionSystems.forEach((system) => {
-      const hasAlert = this.currentAlerts.has(system.alertId);
-      
-      if (system.penalty >= 2.0 && !hasAlert) {
-        // Add malfunction alert
-        const malfunctionAlert = this.createAlert(
-          system.alertId,
-          `${system.name} Malfunction`,
-          `${system.name} system experiencing significant malfunctions due to engineering panel damage.`,
-          'Danger',
-          currentTime
-        );
-        this.currentAlerts.set(system.alertId, malfunctionAlert);
-        alerts.push(malfunctionAlert);
-      } else if (system.penalty >= 2.0 && hasAlert) {
-        // Keep existing alert
-        alerts.push(this.currentAlerts.get(system.alertId)!);
-      } else if (system.penalty < 2.0 && hasAlert) {
-        // Remove malfunction alert
-        this.currentAlerts.delete(system.alertId);
+    // Process each system with three severity levels based on penalty multiplier
+    systems.forEach((system) => {
+      // Remove old alerts if penalty changed
+      if (system.penalty < 1.5) {
+        this.currentAlerts.delete(system.warningId);
+        this.currentAlerts.delete(system.dangerId);
+        this.currentAlerts.delete(system.criticalId);
+      } else if (system.penalty < 2.0) {
+        this.currentAlerts.delete(system.dangerId);
+        this.currentAlerts.delete(system.criticalId);
+      } else if (system.penalty < 5.0) {
+        this.currentAlerts.delete(system.warningId);
+        this.currentAlerts.delete(system.criticalId);
+      } else {
+        this.currentAlerts.delete(system.warningId);
+        this.currentAlerts.delete(system.dangerId);
       }
-    });
 
-    // Check for individual station wiring error alerts (yellow warnings)
-    const stationMapping: { [panelName: string]: string } = {
-      A1b2: "Weapons",
-      Xy9Z: "Thrust",
-      "3Fp7": "Fuel",
-      Q8wS: "Power",
-    };
-
-    // Track which stations have errors
-    const stationsWithErrors: string[] = [];
-
-    for (const panelName of Object.keys(engineeringState.panels)) {
-      const currentPanel = engineeringState.panels[panelName];
-      const correctPanel =
-        engineeringState.correctState[currentPlayer as typeof Players.PLAYER_ONE][panelName];
-
-      if (currentPanel && correctPanel) {
-        const incorrectCount = countIncorrectConnections(
-          currentPanel.connections,
-          correctPanel.connections
-        );
-        if (incorrectCount > 0 && stationMapping[panelName]) {
-          stationsWithErrors.push(stationMapping[panelName]);
+      // Add appropriate alert based on penalty level
+      if (system.penalty >= 5.0) {
+        // Critical: 5x multiplier (heavy penalty)
+        const alertId = system.criticalId;
+        if (!this.currentAlerts.has(alertId)) {
+          const alert = this.createAlert(
+            alertId,
+            `${system.name} System Critical`,
+            `${system.name} system severely damaged. Performance reduced by ${Math.round((system.penalty - 1) * 100)}%.`,
+            'Critical',
+            currentTime
+          );
+          this.currentAlerts.set(alertId, alert);
+          alerts.push(alert);
+        } else {
+          alerts.push(this.currentAlerts.get(alertId)!);
         }
-      }
-    }
-
-    // Create or remove alerts for each station
-    ["Weapons", "Thrust", "Fuel", "Power"].forEach((stationName) => {
-      const alertId = `${stationName.toLowerCase()}-wiring-error`;
-      const hasAlert = this.currentAlerts.has(alertId);
-      const hasError = stationsWithErrors.includes(stationName);
-
-      if (hasError && !hasAlert) {
-        // Add station-specific wiring error alert
-        const wiringAlert = this.createAlert(
-          alertId,
-          `${stationName} Wiring Error`,
-          `${stationName} panel has incorrect wiring connections. Check panel for errors.`,
-          'Warning',
-          currentTime
-        );
-        this.currentAlerts.set(alertId, wiringAlert);
-        alerts.push(wiringAlert);
-      } else if (hasError && hasAlert) {
-        // Keep existing alert
-        alerts.push(this.currentAlerts.get(alertId)!);
-      } else if (!hasError && hasAlert) {
-        // Remove station-specific wiring error alert
-        this.currentAlerts.delete(alertId);
+      } else if (system.penalty >= 2.0) {
+        // Danger: 2x multiplier (medium penalty)
+        const alertId = system.dangerId;
+        if (!this.currentAlerts.has(alertId)) {
+          const alert = this.createAlert(
+            alertId,
+            `${system.name} System Error`,
+            `${system.name} system experiencing errors. Performance reduced by ${Math.round((system.penalty - 1) * 100)}%.`,
+            'Danger',
+            currentTime
+          );
+          this.currentAlerts.set(alertId, alert);
+          alerts.push(alert);
+        } else {
+          alerts.push(this.currentAlerts.get(alertId)!);
+        }
+      } else if (system.penalty >= 1.5) {
+        // Warning: 1.5x multiplier (light penalty)
+        const alertId = system.warningId;
+        if (!this.currentAlerts.has(alertId)) {
+          const alert = this.createAlert(
+            alertId,
+            `${system.name} Wiring Error`,
+            `${system.name} panel has wiring errors. Performance reduced by ${Math.round((system.penalty - 1) * 100)}%.`,
+            'Warning',
+            currentTime
+          );
+          this.currentAlerts.set(alertId, alert);
+          alerts.push(alert);
+        } else {
+          alerts.push(this.currentAlerts.get(alertId)!);
+        }
       }
     });
 

@@ -11,9 +11,8 @@ import {
   Asteroid
 } from '../store/stations/weaponsStore';
 import { updateSystemValue } from '../store/shipStore';
-import { getWeaponsPenaltyMultiplier } from '../store/stations/engineeringStore';
+import { getWeaponsPenaltyMultiplier, getPowerPenaltyMultiplier } from '../store/stations/engineeringStore';
 import { Players } from '../types';
-import { AutomaticAlertSystem } from '../systems/AutomaticAlertSystem';
 import { AlertTriangle, AlertCircle, AlertOctagon } from 'lucide-react';
 
 const CANVAS_WIDTH = 600;
@@ -199,13 +198,20 @@ export const Weapons: React.FC = () => {
     []
   );
 
-  // Get weapons-specific alerts
-  const alertSystem = AutomaticAlertSystem.getInstance();
-  const weaponsAlerts = alertSystem.getWeaponsAlerts(
-    engineeringState,
-    currentPlayer || Players.PLAYER_ONE,
-    batteryPower
-  );
+  // Get weapons-specific alerts based on penalty levels
+  const powerPenalty = engineeringState ? getPowerPenaltyMultiplier(engineeringState, currentPlayer || Players.PLAYER_ONE) : 1;
+  
+  // Determine alert levels based on penalty multipliers (matching AutomaticAlertSystem logic)
+  const getAlertSeverity = (penalty: number): 'Warning' | 'Danger' | 'Critical' | null => {
+    if (penalty >= 5.0) return 'Critical';
+    if (penalty >= 2.0) return 'Danger';
+    if (penalty >= 1.5) return 'Warning';
+    return null;
+  };
+
+  const weaponsAlertSeverity = getAlertSeverity(weaponsPenalty);
+  const powerAlertSeverity = getAlertSeverity(powerPenalty);
+  const powerLow = batteryPower.current < 5; // Minimum weapon power requirement
 
   const getAlertIcon = (severity: 'Warning' | 'Danger' | 'Critical') => {
     switch (severity) {
@@ -226,6 +232,18 @@ export const Weapons: React.FC = () => {
         return 'bg-orange-500/20 border-orange-500 text-orange-400';
       default:
         return 'bg-yellow-500/20 border-yellow-500 text-yellow-400';
+    }
+  };
+
+  const getAlertMessage = (system: string, severity: 'Warning' | 'Danger' | 'Critical', penalty: number): string => {
+    const reduction = Math.round((penalty - 1) * 100);
+    switch (severity) {
+      case 'Critical':
+        return `${system} System Critical: Performance reduced by ${reduction}%`;
+      case 'Danger':
+        return `${system} System Error: Performance reduced by ${reduction}%`;
+      default:
+        return `${system} Wiring Error: Performance reduced by ${reduction}%`;
     }
   };
 
@@ -283,25 +301,25 @@ export const Weapons: React.FC = () => {
       
       {/* Alerts Section */}
       <div className="mt-4 space-y-2">
-        {weaponsAlerts.weaponsWiringError.active && (
-          <div className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(weaponsAlerts.weaponsWiringError.severity)}`}>
-            {getAlertIcon(weaponsAlerts.weaponsWiringError.severity)}
+        {weaponsAlertSeverity && (
+          <div className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(weaponsAlertSeverity)}`}>
+            {getAlertIcon(weaponsAlertSeverity)}
             <span className="font-mono text-sm">
-              Weapons Wiring Error: Cooldowns increased by {Math.round((weaponsAlerts.weaponsWiringError.penalty - 1) * 100)}%
+              {getAlertMessage('Weapons', weaponsAlertSeverity, weaponsPenalty)}
             </span>
           </div>
         )}
         
-        {weaponsAlerts.powerRegenerationSlow.active && (
-          <div className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(weaponsAlerts.powerRegenerationSlow.severity)}`}>
-            {getAlertIcon(weaponsAlerts.powerRegenerationSlow.severity)}
+        {powerAlertSeverity && (
+          <div className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(powerAlertSeverity)}`}>
+            {getAlertIcon(powerAlertSeverity)}
             <span className="font-mono text-sm">
-              Power System Error: Regeneration slowed by {Math.round((weaponsAlerts.powerRegenerationSlow.penalty - 1) * 100)}%
+              {getAlertMessage('Power', powerAlertSeverity, powerPenalty)}
             </span>
           </div>
         )}
         
-        {weaponsAlerts.powerLow && (
+        {powerLow && (
           <div className="flex items-center gap-2 px-3 py-2 rounded border bg-red-500/20 border-red-500 text-red-400">
             <AlertOctagon className="w-5 h-5" />
             <span className="font-mono text-sm">
