@@ -24,6 +24,8 @@ export const Weapons: React.FC = () => {
   const dispatch = useDispatch();
   const asteroids = useSelector((s: RootState) => s.weapons.asteroids);
   const cooldownUntil = useSelector((s: RootState) => s.weapons.cooldownUntil);
+  const cooldownStartedAt = useSelector((s: RootState) => s.weapons.cooldownStartedAt);
+  const cooldownDuration = useSelector((s: RootState) => s.weapons.cooldownDuration);
   const gameClock = useSelector((s: RootState) => s.ship.gameClock);
   const nowSeconds = toTotalSeconds(gameClock);
   const batteryPower = useSelector((s: RootState) => s.ship.batteryPower);
@@ -52,30 +54,29 @@ export const Weapons: React.FC = () => {
     const isReady = cooldownUntil[weapon] <= nowSeconds;
     if (!isReady) return;
 
-    // Calculate actual power requirement with engineering penalty
+    // Use base power cost (penalty affects cooldown, not energy cost)
     const basePowerCost = WEAPON_POWER_REQUIREMENTS[weapon];
-    const actualPowerCost = Math.round(basePowerCost * weaponsPenalty);
 
-    // Check if we have enough power (using actual power cost)
-    if (batteryPower.current < actualPowerCost) {
+    // Check if we have enough power (using base power cost)
+    if (batteryPower.current < basePowerCost) {
       return; // Not enough power to fire
     }
 
     const targets = getTargetAsteroids(weapon);
     if (targets.length === 0) {
-      // Consume power even on miss
+      // Consume power even on miss (base cost only)
       dispatch(updateSystemValue({ 
         system: 'batteryPower', 
-        value: -actualPowerCost 
+        value: -basePowerCost 
       }));
-      dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 3, currentGameSeconds: nowSeconds, engineeringPenalty: weaponsPenalty }));
+      dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 1, currentGameSeconds: nowSeconds, engineeringPenalty: weaponsPenalty }));
       return;
     }
 
-    // Consume power for successful shot
+    // Consume power for successful shot (base cost only)
     dispatch(updateSystemValue({ 
       system: 'batteryPower', 
-      value: -actualPowerCost 
+      value: -basePowerCost 
     }));
 
     // 200ms laser animation then apply effect and set 1s cooldown
@@ -84,7 +85,8 @@ export const Weapons: React.FC = () => {
       targets.forEach(target => {
         dispatch(popAsteroidLayer({ asteroidId: target.id }));
       });
-      dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 1, currentGameSeconds: nowSeconds + 1, engineeringPenalty: weaponsPenalty }));
+      // Note: nowSeconds + 1 because the animation takes ~200ms which is less than 1 game second
+      dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 3, currentGameSeconds: nowSeconds + 1, engineeringPenalty: weaponsPenalty }));
     }, 200);
   };
 
@@ -236,14 +238,26 @@ export const Weapons: React.FC = () => {
   };
 
   const getAlertMessage = (system: string, severity: 'Warning' | 'Danger' | 'Critical', penalty: number): string => {
-    const reduction = Math.round((penalty - 1) * 100);
-    switch (severity) {
-      case 'Critical':
-        return `${system} System Critical: Performance reduced by ${reduction}%`;
-      case 'Danger':
-        return `${system} System Error: Performance reduced by ${reduction}%`;
-      default:
-        return `${system} Wiring Error: Performance reduced by ${reduction}%`;
+    const increase = Math.round((penalty - 1) * 100);
+    if (system === 'Weapons') {
+      switch (severity) {
+        case 'Critical':
+          return `${system} System Critical: Cooldowns increased by ${increase}%`;
+        case 'Danger':
+          return `${system} System Error: Cooldowns increased by ${increase}%`;
+        default:
+          return `${system} Wiring Error: Cooldowns increased by ${increase}%`;
+      }
+    } else {
+      // For Power system, it still affects regeneration
+      switch (severity) {
+        case 'Critical':
+          return `${system} System Critical: Regeneration slowed by ${increase}%`;
+        case 'Danger':
+          return `${system} System Error: Regeneration slowed by ${increase}%`;
+        default:
+          return `${system} Wiring Error: Regeneration slowed by ${increase}%`;
+      }
     }
   };
 
@@ -261,10 +275,15 @@ export const Weapons: React.FC = () => {
         {buttons.map(btn => {
           const readyIn = Math.max(0, cooldownUntil[btn.label] - nowSeconds);
           const basePowerCost = WEAPON_POWER_REQUIREMENTS[btn.label];
-          const actualPowerCost = Math.round(basePowerCost * weaponsPenalty);
-          const hasPower = batteryPower.current >= actualPowerCost;
+          const hasPower = batteryPower.current >= basePowerCost;
           const disabled = readyIn > 0 || !hasPower;
-          const cooldownProgress = readyIn > 0 ? 1 - (readyIn / 3) : 1; // Assuming max cooldown is 3 seconds
+          
+          // Calculate progress based on actual cooldown duration (including penalty)
+          const totalDuration = cooldownDuration[btn.label];
+          const elapsed = nowSeconds - cooldownStartedAt[btn.label];
+          const cooldownProgress = readyIn > 0 && totalDuration > 0 
+            ? Math.max(0, Math.min(1, elapsed / totalDuration))
+            : 1;
           
           return (
             <button
@@ -279,8 +298,8 @@ export const Weapons: React.FC = () => {
                 disabled 
                   ? readyIn > 0 
                     ? `Cooldown ${readyIn}s` 
-                    : `Insufficient power (${actualPowerCost} required)`
-                  : `${btn.label} (${actualPowerCost} power)`
+                    : `Insufficient power (${basePowerCost} required)`
+                  : `${btn.label} (${basePowerCost} power)`
               }
             >
               {/* Cooldown progress bar overlay */}

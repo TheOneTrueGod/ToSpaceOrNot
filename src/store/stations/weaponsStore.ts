@@ -35,6 +35,8 @@ export interface Asteroid {
 export interface WeaponsState {
   asteroids: Asteroid[];
   cooldownUntil: Record<WeaponType, number>; // game time in total seconds when weapon becomes ready
+  cooldownStartedAt: Record<WeaponType, number>; // game time in total seconds when cooldown started
+  cooldownDuration: Record<WeaponType, number>; // total cooldown duration in seconds (including penalty)
 }
 
 const toGameSeconds = (t: { minutes: number; seconds: number }): number =>
@@ -64,6 +66,16 @@ const initialState: WeaponsState = {
     Missiles: 0,
     Railgun: 0,
   },
+  cooldownStartedAt: {
+    Phasers: 0,
+    Missiles: 0,
+    Railgun: 0,
+  },
+  cooldownDuration: {
+    Phasers: 0,
+    Missiles: 0,
+    Railgun: 0,
+  },
 };
 
 export const weaponsSlice = createSlice({
@@ -88,6 +100,10 @@ export const weaponsSlice = createSlice({
 
       // Apply engineering penalty to weapon cooldown
       const actualCooldown = Math.round(cooldownSeconds * engineeringPenalty);
+      
+      // Track cooldown timing for progress bar
+      state.cooldownStartedAt[weapon] = currentGameSeconds;
+      state.cooldownDuration[weapon] = actualCooldown;
       state.cooldownUntil[weapon] = currentGameSeconds + actualCooldown;
     },
     spawnAsteroid: (
