@@ -49,7 +49,7 @@ export class DungeonMaster {
       return 0;
     }
 
-    let speed = 1; // Base speed
+    let speed = 1.5; // Base speed
 
     // Check navigation alignment - need current player to determine correct values
     const currentPlayer = state.game?.currentPlayer || Players.PLAYER_ONE;
@@ -61,6 +61,8 @@ export class DungeonMaster {
       speed -= 0.5; // One navigation number incorrect
     } else if (navErrors >= 2) {
       speed -= 1; // Two or more navigation numbers incorrect
+    } else if (navErrors >= 3) {
+      speed -= 1.5;
     }
 
     // Apply engineering thrust penalty
