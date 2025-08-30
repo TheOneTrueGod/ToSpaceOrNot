@@ -139,11 +139,14 @@ export class DisasterEvents {
       return DisasterEvents.canRewirePanel(currentPanel, source);
     });
 
-    // If no panels can be rewired, nothing happens
+    // If no panels can be rewired, fall back to spawning asteroids
     if (availablePanels.length === 0) {
       console.log(
-        `🛡️ ${source} engineering disaster avoided - no valid panels to rewire`
+        `🛡️ ${source} engineering disaster avoided - falling back to asteroids`
       );
+      // Spawn 1-2 small asteroids as fallback
+      const count = 1 + Math.floor(Math.random() * 2);
+      DisasterEvents.spawnAsteroids(count, count);
       return null;
     }
 
@@ -284,8 +287,13 @@ export const DISASTER_TYPES: Record<string, DisasterType> = {
 
       if (availablePanels.length === 0) {
         console.log(
-          "🛡️ Major engineering disaster avoided - no panels can be overridden"
+          "🛡️ Major engineering disaster avoided - falling back to asteroids"
         );
+        // Spawn 2-3 asteroids with 1 large for major disaster fallback
+        const totalCount = 2 + Math.floor(Math.random() * 2); // 2-3 asteroids
+        const largeCount = 1; // 1 large
+        const smallCount = totalCount - largeCount;
+        DisasterEvents.spawnAsteroids(totalCount, smallCount, 0, largeCount);
         return;
       }
 
@@ -347,8 +355,14 @@ export const DISASTER_TYPES: Record<string, DisasterType> = {
 
       if (availablePanels.length === 0) {
         console.log(
-          "🛡️ Catastrophic engineering disaster avoided - all panels already catastrophically damaged"
+          "🛡️ Catastrophic engineering disaster avoided - falling back to asteroid cluster"
         );
+        // Spawn a significant asteroid cluster for catastrophic disaster fallback
+        const totalCount = 5 + Math.floor(Math.random() * 3); // 5-7 asteroids
+        const largeCount = 2; // 2 large
+        const mediumCount = 1 + Math.floor(Math.random() * 2); // 1-2 medium
+        const smallCount = totalCount - largeCount - mediumCount;
+        DisasterEvents.spawnAsteroids(totalCount, smallCount, mediumCount, largeCount, 1.3);
         return;
       }
 
