@@ -1,0 +1,9 @@
+name = "to-space-or-not"
+main = "src/index.js"
+compatibility_date = "2023-12-01"
+
+[env.production]
+name = "to-space-or-not-production"
+
+[env.staging]
+name = "to-space-or-not-staging"
