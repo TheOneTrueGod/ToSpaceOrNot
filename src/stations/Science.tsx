@@ -24,6 +24,7 @@ import {
 import { getFuelPenaltyMultiplier } from "../store/stations/engineeringStore";
 import { updateSystemValue } from "../store/shipStore";
 import { ButtonWithProgressBar } from "../components/ButtonWithProgressBar";
+import { AlertTriangle, AlertCircle, AlertOctagon } from 'lucide-react';
 
 const PulseButton: React.FC = () => {
   const dispatch = useDispatch();
@@ -156,6 +157,50 @@ const FuelMixingGame: React.FC = () => {
   const adjustedRefuelCooldown = Math.round(REFUEL_COOLDOWN_SECONDS * fuelPenalty);
   const adjustedDumpCooldown = Math.round(DUMP_COOLDOWN_SECONDS * fuelPenalty);
   const adjustedDumpAllCooldown = Math.round(DUMP_ALL_COOLDOWN_SECONDS * fuelPenalty);
+  
+  // Determine alert levels based on penalty multipliers (matching AutomaticAlertSystem logic)
+  const getAlertSeverity = (penalty: number): 'Warning' | 'Danger' | 'Critical' | null => {
+    if (penalty >= 5.0) return 'Critical';
+    if (penalty >= 2.0) return 'Danger';
+    if (penalty >= 1.5) return 'Warning';
+    return null;
+  };
+
+  const fuelAlertSeverity = getAlertSeverity(fuelPenalty);
+
+  const getAlertIcon = (severity: 'Warning' | 'Danger' | 'Critical') => {
+    switch (severity) {
+      case 'Critical':
+        return <AlertOctagon className="w-5 h-5" />;
+      case 'Danger':
+        return <AlertTriangle className="w-5 h-5" />;
+      default:
+        return <AlertCircle className="w-5 h-5" />;
+    }
+  };
+
+  const getAlertColor = (severity: 'Warning' | 'Danger' | 'Critical') => {
+    switch (severity) {
+      case 'Critical':
+        return 'bg-red-500/20 border-red-500 text-red-400';
+      case 'Danger':
+        return 'bg-orange-500/20 border-orange-500 text-orange-400';
+      default:
+        return 'bg-yellow-500/20 border-yellow-500 text-yellow-400';
+    }
+  };
+
+  const getAlertMessage = (severity: 'Warning' | 'Danger' | 'Critical', penalty: number): string => {
+    const increase = Math.round((penalty - 1) * 100);
+    switch (severity) {
+      case 'Critical':
+        return `Fuel System Critical: Cooldowns increased by ${increase}%`;
+      case 'Danger':
+        return `Fuel System Error: Cooldowns increased by ${increase}%`;
+      default:
+        return `Fuel Wiring Error: Cooldowns increased by ${increase}%`;
+    }
+  };
 
   // Calculate distance traveled and required mixture length
   const distanceTraveled =
@@ -451,6 +496,18 @@ const FuelMixingGame: React.FC = () => {
             </p>
           </div>
         </div>
+      </div>
+      
+      {/* Alerts Section */}
+      <div className="mt-4 space-y-2">
+        {fuelAlertSeverity && (
+          <div className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(fuelAlertSeverity)}`}>
+            {getAlertIcon(fuelAlertSeverity)}
+            <span className="font-mono text-sm">
+              {getAlertMessage(fuelAlertSeverity, fuelPenalty)}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
