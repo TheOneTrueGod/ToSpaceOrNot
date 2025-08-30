@@ -1,5 +1,5 @@
-name = "to-space-or-not"
-main = "src/index.js"
+name = "spacebound"
+main = "src/wrangler.js"
 compatibility_date = "2023-12-01"
 
 [env.production]
