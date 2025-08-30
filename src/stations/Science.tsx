@@ -21,6 +21,7 @@ import {
   DUMP_ALL_COOLDOWN_SECONDS,
   FuelType,
 } from "../store/stations/scienceStore";
+import { getFuelPenaltyMultiplier } from "../store/stations/engineeringStore";
 import { updateSystemValue } from "../store/shipStore";
 import { ButtonWithProgressBar } from "../components/ButtonWithProgressBar";
 
@@ -137,6 +138,7 @@ const FuelMixingGame: React.FC = () => {
   const scienceState = useSelector((state: RootState) => state.science);
   const gameClock = useSelector((state: RootState) => state.ship.gameClock);
   const shipState = useSelector((state: RootState) => state.ship);
+  const engineeringState = useSelector((state: RootState) => state.engineering);
   const currentPlayer = useSelector(
     (state: RootState) => state.game.currentPlayer
   );
@@ -144,6 +146,16 @@ const FuelMixingGame: React.FC = () => {
     from: number;
     to: "active";
   } | null>(null);
+  
+  // Calculate fuel penalty from engineering state
+  const fuelPenalty = engineeringState 
+    ? getFuelPenaltyMultiplier(engineeringState, currentPlayer || Players.PLAYER_ONE)
+    : 1;
+  
+  // Calculate penalty-adjusted cooldowns
+  const adjustedRefuelCooldown = Math.round(REFUEL_COOLDOWN_SECONDS * fuelPenalty);
+  const adjustedDumpCooldown = Math.round(DUMP_COOLDOWN_SECONDS * fuelPenalty);
+  const adjustedDumpAllCooldown = Math.round(DUMP_ALL_COOLDOWN_SECONDS * fuelPenalty);
 
   // Calculate distance traveled and required mixture length
   const distanceTraveled =
@@ -263,7 +275,7 @@ const FuelMixingGame: React.FC = () => {
       !isDumpOnCooldown &&
       scienceState.fuelMixture.activeTube.layers.length > 0
     ) {
-      dispatch(dumpTopLayer(currentGameSeconds));
+      dispatch(dumpTopLayer({ currentGameSeconds, fuelPenalty }));
     }
   };
 
@@ -272,13 +284,13 @@ const FuelMixingGame: React.FC = () => {
       !isDumpAllOnCooldown &&
       scienceState.fuelMixture.activeTube.layers.length > 0
     ) {
-      dispatch(dumpAllLayers(currentGameSeconds));
+      dispatch(dumpAllLayers({ currentGameSeconds, fuelPenalty }));
     }
   };
 
   const handleRefuel = () => {
     if (!isRefuelOnCooldown) {
-      dispatch(startRefuel(currentGameSeconds));
+      dispatch(startRefuel({ currentGameSeconds, fuelPenalty }));
     }
   };
 
@@ -348,14 +360,9 @@ const FuelMixingGame: React.FC = () => {
                 maxCooldown={REFUEL_COOLDOWN_SECONDS}
                 baseColor="bg-blue-600 hover:bg-blue-700"
                 showCooldownInLabel={false}
-                tooltip={
-                  isRefuelOnCooldown
-                    ? `On cooldown: ${refuelCooldownRemaining}s remaining`
-                    : "Refill storage tubes with random fuel layers"
-                }
               />
               <span className="text-sky-400 text-sm font-mono mt-1">
-                {isRefuelOnCooldown ? `${refuelCooldownRemaining}s` : `${REFUEL_COOLDOWN_SECONDS}s cooldown`}
+                {isRefuelOnCooldown ? `${refuelCooldownRemaining}s` : `${adjustedRefuelCooldown}s delay`}
               </span>
             </div>
           </div>
@@ -386,16 +393,9 @@ const FuelMixingGame: React.FC = () => {
                 maxCooldown={DUMP_COOLDOWN_SECONDS}
                 baseColor="bg-orange-600 hover:bg-orange-700"
                 showCooldownInLabel={false}
-                tooltip={
-                  isDumpOnCooldown
-                    ? `On cooldown: ${dumpCooldownRemaining}s remaining`
-                    : scienceState.fuelMixture.activeTube.layers.length === 0
-                    ? "Active tube is empty"
-                    : "Remove the top layer from the active tube"
-                }
               />
               <span className="text-sky-400 text-sm font-mono mt-1">
-                {isDumpOnCooldown ? `${dumpCooldownRemaining}s` : `${DUMP_COOLDOWN_SECONDS}s cooldown`}
+                {isDumpOnCooldown ? `${dumpCooldownRemaining}s` : `${adjustedDumpCooldown}s cooldown`}
               </span>
             </div>
 
@@ -411,16 +411,9 @@ const FuelMixingGame: React.FC = () => {
                 maxCooldown={DUMP_ALL_COOLDOWN_SECONDS}
                 baseColor="bg-red-600 hover:bg-red-700"
                 showCooldownInLabel={false}
-                tooltip={
-                  isDumpAllOnCooldown
-                    ? `On cooldown: ${dumpAllCooldownRemaining}s remaining`
-                    : scienceState.fuelMixture.activeTube.layers.length === 0
-                    ? "Active tube is empty"
-                    : "Remove all layers from the active tube"
-                }
               />
               <span className="text-sky-400 text-sm font-mono mt-1">
-                {isDumpAllOnCooldown ? `${dumpAllCooldownRemaining}s` : `${DUMP_ALL_COOLDOWN_SECONDS}s cooldown`}
+                {isDumpAllOnCooldown ? `${dumpAllCooldownRemaining}s` : `${adjustedDumpAllCooldown}s cooldown`}
               </span>
             </div>
           </div>

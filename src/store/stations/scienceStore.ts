@@ -1,6 +1,4 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { store } from '../index';
-import { getFuelPenaltyMultiplier } from './engineeringStore';
 import { Quadrant, getQuadrant, Players } from '../../types';
 
 export type FuelType = 'Hydrogen' | 'Xenon' | 'Plutonium' | 'Helium';
@@ -71,22 +69,9 @@ export const getMixtureLength = (distanceTraveled: number): number => {
 };
 
 // Helper function to calculate actual cooldown with engineering penalty
-const calculateCooldownWithPenalty = (baseCooldown: number): number => {
-  try {
-    const currentState = store.getState();
-    const engineeringState = currentState.engineering;
-    const currentPlayer = currentState.game?.currentPlayer || Players.PLAYER_ONE;
-    
-    if (engineeringState) {
-      const fuelPenalty = getFuelPenaltyMultiplier(engineeringState, currentPlayer);
-      return Math.round(baseCooldown * fuelPenalty);
-    }
-    
-    return baseCooldown;
-  } catch (error) {
-    // Fallback to base cooldown if there are any issues accessing state
-    return baseCooldown;
-  }
+// This is now a pure function that takes the penalty as a parameter
+const calculateCooldownWithPenalty = (baseCooldown: number, fuelPenalty: number = 1): number => {
+  return Math.round(baseCooldown * fuelPenalty);
 };
 
 class SeededRandom {
@@ -194,25 +179,25 @@ export const scienceSlice = createSlice({
       state.fuelMixture.activeTube.layers.push(fuel);
     },
     
-    dumpTopLayer: (state, action: PayloadAction<number>) => {
-      const currentGameSeconds = action.payload;
+    dumpTopLayer: (state, action: PayloadAction<{ currentGameSeconds: number; fuelPenalty?: number }>) => {
+      const { currentGameSeconds, fuelPenalty = 1 } = action.payload;
       if (currentGameSeconds < state.fuelMixture.dumpCooldownUntil) return;
       if (state.fuelMixture.activeTube.layers.length === 0) return;
       
       // Remove the top layer (last element in the array)
       state.fuelMixture.activeTube.layers.pop();
-      const cooldownDuration = calculateCooldownWithPenalty(DUMP_COOLDOWN_SECONDS);
+      const cooldownDuration = calculateCooldownWithPenalty(DUMP_COOLDOWN_SECONDS, fuelPenalty);
       state.fuelMixture.dumpCooldownUntil = currentGameSeconds + cooldownDuration;
     },
     
-    dumpAllLayers: (state, action: PayloadAction<number>) => {
-      const currentGameSeconds = action.payload;
+    dumpAllLayers: (state, action: PayloadAction<{ currentGameSeconds: number; fuelPenalty?: number }>) => {
+      const { currentGameSeconds, fuelPenalty = 1 } = action.payload;
       if (currentGameSeconds < state.fuelMixture.dumpAllCooldownUntil) return;
       if (state.fuelMixture.activeTube.layers.length === 0) return;
       
       // Remove all layers
       state.fuelMixture.activeTube.layers = [];
-      const cooldownDuration = calculateCooldownWithPenalty(DUMP_ALL_COOLDOWN_SECONDS);
+      const cooldownDuration = calculateCooldownWithPenalty(DUMP_ALL_COOLDOWN_SECONDS, fuelPenalty);
       state.fuelMixture.dumpAllCooldownUntil = currentGameSeconds + cooldownDuration;
     },
     
@@ -240,8 +225,8 @@ export const scienceSlice = createSlice({
       }
     },
     
-    startRefuel: (state, action: PayloadAction<number>) => {
-      const currentGameSeconds = action.payload;
+    startRefuel: (state, action: PayloadAction<{ currentGameSeconds: number; fuelPenalty?: number }>) => {
+      const { currentGameSeconds, fuelPenalty = 1 } = action.payload;
       if (currentGameSeconds < state.fuelMixture.refuelCooldownUntil) return;
       
       // Empty all storage tubes immediately
@@ -251,7 +236,7 @@ export const scienceSlice = createSlice({
         { layers: [] },
         { layers: [] }
       ];
-      const cooldownDuration = calculateCooldownWithPenalty(REFUEL_COOLDOWN_SECONDS);
+      const cooldownDuration = calculateCooldownWithPenalty(REFUEL_COOLDOWN_SECONDS, fuelPenalty);
       state.fuelMixture.refuelCooldownUntil = currentGameSeconds + cooldownDuration;
     },
     
