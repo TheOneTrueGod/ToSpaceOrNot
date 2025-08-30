@@ -3,7 +3,7 @@ main = "src/wrangler.js"
 compatibility_date = "2023-12-01"
 
 [env.production]
-name = "to-space-or-not-production"
+name = "spacebound"
 
 [env.staging]
-name = "to-space-or-not-staging"
+name = "spacebound-staging"
