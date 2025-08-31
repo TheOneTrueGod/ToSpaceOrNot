@@ -246,6 +246,15 @@ export const StatusMonitor: React.FC = () => {
           disasterAnimation={disasterAnimation}
         />
 
+        {/* Hull Destroyed overlay */}
+        {shipState.hullDamage.current >= shipState.hullDamage.max && (
+          <div className="absolute inset-0 flex items-center justify-center bg-red-600 bg-opacity-80 rounded">
+            <div className="text-white font-bold text-2xl font-mono tracking-wider">
+              HULL DESTROYED
+            </div>
+          </div>
+        )}
+
         {/* Break overlay */}
         {shipState.isOnBreak && (
           <div className="absolute top-0 left-0 bg-green-500 bg-opacity-20 border-2 border-green-400 rounded px-3 py-1">
