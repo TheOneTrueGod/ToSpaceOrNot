@@ -24,6 +24,7 @@ import {
 import { getFuelPenaltyMultiplier } from "../store/stations/engineeringStore";
 import { updateSystemValue } from "../store/shipStore";
 import { ButtonWithProgressBar } from "../components/ButtonWithProgressBar";
+import { StationTitle } from "../components/StationTitle";
 import { AlertTriangle, AlertCircle, AlertOctagon } from 'lucide-react';
 
 const PulseButton: React.FC = () => {
@@ -516,9 +517,7 @@ const FuelMixingGame: React.FC = () => {
 export const Science: React.FC = () => {
   return (
     <div className="w-full max-w-4xl mx-auto p-6 bg-gray-800 rounded-lg">
-      <h2 className="text-2xl font-mono text-white text-center mb-8">
-        Science Station - Reactor Control
-      </h2>
+      <StationTitle>Science Station - Reactor Control</StationTitle>
 
       <div className="space-y-8">
         <div className="bg-gray-700 p-6 rounded-lg">

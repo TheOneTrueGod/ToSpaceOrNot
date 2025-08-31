@@ -12,6 +12,7 @@ import {
   getPenaltyMultiplier,
   countIncorrectConnections,
 } from "../store/stations/engineeringStore";
+import { StationTitle } from "../components/StationTitle";
 
 interface WireConnection {
   from: { type: "input" | "node" | "output"; index: number };
@@ -603,8 +604,8 @@ export const Engineering: React.FC = () => {
 
   return (
     <div className="bg-gray-800 p-6 h-full">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-white text-xl font-mono">Engineering Station</h2>
+      <StationTitle>Engineering Station</StationTitle>
+      <div className="flex justify-end mb-4">
         <button
           onClick={handleSchematicToggle}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-mono text-sm rounded transition-colors"

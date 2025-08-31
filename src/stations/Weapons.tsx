@@ -13,6 +13,7 @@ import {
 import { updateSystemValue } from '../store/shipStore';
 import { getWeaponsPenaltyMultiplier, getPowerPenaltyMultiplier } from '../store/stations/engineeringStore';
 import { Players } from '../types';
+import { StationTitle } from '../components/StationTitle';
 import { AlertTriangle, AlertCircle, AlertOctagon } from 'lucide-react';
 
 const CANVAS_WIDTH = 600;
@@ -263,6 +264,7 @@ export const Weapons: React.FC = () => {
 
   return (
     <div className="w-full">
+      <StationTitle>Weapons Station</StationTitle>
       <div className="flex justify-center">
         <canvas
           ref={canvasRef}

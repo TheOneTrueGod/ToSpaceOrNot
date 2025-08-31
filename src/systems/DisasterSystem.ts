@@ -4,12 +4,11 @@ import { spawnAsteroid } from "../store/stations/weaponsStore";
 import { updateSystemValue } from "../store/shipStore";
 import {
   updatePanelConnections,
-  countIncorrectConnections,
   RewireSource,
 } from "../store/stations/engineeringStore";
 import { updateNavigationValue } from "../store/stations/navigationStore";
 import { disasterEventBus } from "./DisasterEventBus";
-import { Quadrant, QUADRANT_BOUNDARIES, getQuadrant } from "../types";
+import { Quadrant, getQuadrant } from "../types";
 
 export type DisasterSeverity = "minor" | "major" | "catastrophic";
 
@@ -93,7 +92,7 @@ export class DisasterEvents {
   }
 
   // Check if a panel can be rewired based on override rules
-  static canRewirePanel(panel: any, newSource: RewireSource): boolean {
+  static canRewirePanel(panel: { rewireSource?: RewireSource }, newSource: RewireSource): boolean {
     const currentSource = panel.rewireSource;
 
     // If panel has no rewire source (user fixed or never rewired), it can be rewired
@@ -168,7 +167,7 @@ export class DisasterEvents {
     const newConnections = [...panel.connections];
 
     // 50% chance to remove the connection, 50% chance to rewire it
-    if (Math.random() < 0.5) {
+    if (Math.random() < 0.5 || source === 'minor') {
       // Remove connection
       newConnections.splice(randomConnectionIndex, 1);
     } else {
@@ -482,7 +481,7 @@ export const QUADRANT_DISASTER_WEIGHTS: Record<Quadrant, DisasterWeight[]> = {
     // Mostly minor disasters in Alpha Quadrant
     { disasterId: "NAV_MISALIGN", weight: 3 },
     { disasterId: "SINGLE_ASTEROID", weight: 5 },
-    { disasterId: "POWER_SURGE", weight: 3 },
+    //{ disasterId: "POWER_SURGE", weight: 3 },
     { disasterId: "MINOR_REWIRE", weight: 30 },
     // Very rare major disaster
     { disasterId: "MAJOR_ASTEROID", weight: 1 },
@@ -491,7 +490,7 @@ export const QUADRANT_DISASTER_WEIGHTS: Record<Quadrant, DisasterWeight[]> = {
     // Mix of minor and major disasters in Beta Quadrant
     { disasterId: "NAV_MISALIGN", weight: 2 },
     { disasterId: "SINGLE_ASTEROID", weight: 3 },
-    { disasterId: "POWER_SURGE", weight: 2 },
+    //{ disasterId: "POWER_SURGE", weight: 2 },
     { disasterId: "MINOR_REWIRE", weight: 15 },
     { disasterId: "MAJOR_ASTEROID", weight: 5 },
     { disasterId: "MAJOR_REWIRE", weight: 4 },
@@ -512,6 +511,7 @@ export const QUADRANT_DISASTER_WEIGHTS: Record<Quadrant, DisasterWeight[]> = {
   ],
   [Quadrant.Delta]: [
     // Predominantly catastrophic disasters in Delta Quadrant
+		{ disasterId: "SINGLE_ASTEROID", weight: 2 },
     { disasterId: "MINOR_REWIRE", weight: 1 },
     { disasterId: "MAJOR_ASTEROID", weight: 4 },
     { disasterId: "MAJOR_REWIRE", weight: 4 },
@@ -526,6 +526,7 @@ export class DisasterSystem {
   private lastDisasterTime: number = 0;
   private nextDisasterTime: number = 30; // First disaster after 30 seconds
   private firstDisasterTriggered: boolean = false;
+  private recentDisasterHistory: DisasterSeverity[] = [];
 
   checkForDisaster(
     currentGameTime: number,
@@ -558,6 +559,10 @@ export class DisasterSystem {
     const majorAsteroidDisaster = DISASTER_TYPES["MAJOR_ASTEROID"];
     if (majorAsteroidDisaster) {
       majorAsteroidDisaster.execute();
+      
+      // Track this disaster in history
+      this.addDisasterToHistory(majorAsteroidDisaster.severity);
+      
       disasterEventBus.triggerAnimation("shake"); // General disaster animation
       console.log("🌟 First disaster triggered: Major Asteroid");
     }
@@ -570,9 +575,20 @@ export class DisasterSystem {
     const quadrantWeights = QUADRANT_DISASTER_WEIGHTS[currentQuadrant];
     if (!quadrantWeights || quadrantWeights.length === 0) return;
 
+    // Check if we should prevent catastrophic disasters
+    const shouldPreventCatastrophic = this.shouldPreventCatastrophicDisaster();
+
+    // Filter out catastrophic disasters if needed
+    const filteredWeights = shouldPreventCatastrophic 
+      ? quadrantWeights.filter(dw => DISASTER_TYPES[dw.disasterId].severity !== "catastrophic")
+      : quadrantWeights;
+
+    // If no disasters left after filtering, use original weights (shouldn't happen in practice)
+    const weightsToUse = filteredWeights.length > 0 ? filteredWeights : quadrantWeights;
+
     // Build weighted array of disaster IDs
     const weightedDisasterIds: string[] = [];
-    quadrantWeights.forEach((dw) => {
+    weightsToUse.forEach((dw) => {
       for (let i = 0; i < dw.weight; i++) {
         weightedDisasterIds.push(dw.disasterId);
       }
@@ -592,13 +608,17 @@ export class DisasterSystem {
 
     selectedDisaster.execute();
 
+    // Track this disaster in history
+    this.addDisasterToHistory(selectedDisaster.severity);
+
     // Trigger appropriate animation (navigation misalignment already triggers its own)
     if (selectedDisaster.id !== "NAV_MISALIGN") {
       disasterEventBus.triggerAnimation("shake");
     }
 
+    const preventionNote = shouldPreventCatastrophic ? " (catastrophic disasters prevented)" : "";
     console.log(
-      `🌟 Disaster triggered: ${selectedDisaster.name} (${selectedDisaster.severity}) in ${currentQuadrant} Quadrant`
+      `🌟 Disaster triggered: ${selectedDisaster.name} (${selectedDisaster.severity}) in ${currentQuadrant} Quadrant${preventionNote}`
     );
   }
 
@@ -609,9 +629,29 @@ export class DisasterSystem {
     this.lastDisasterTime = currentTime;
   }
 
+  private shouldPreventCatastrophicDisaster(): boolean {
+    // If we have a catastrophic disaster as the most recent disaster,
+    // prevent catastrophic disasters for the next 2 disasters
+    if (this.recentDisasterHistory.length === 0) return false;
+    
+    const mostRecent = this.recentDisasterHistory[this.recentDisasterHistory.length - 1];
+    return mostRecent === "catastrophic";
+  }
+
+  private addDisasterToHistory(severity: DisasterSeverity): void {
+    this.recentDisasterHistory.push(severity);
+    
+    // Keep only the last 3 disasters in history (current + 2 previous)
+    // This allows tracking if the most recent was catastrophic
+    if (this.recentDisasterHistory.length > 3) {
+      this.recentDisasterHistory.shift();
+    }
+  }
+
   reset(): void {
     this.lastDisasterTime = 0;
     this.nextDisasterTime = 30;
     this.firstDisasterTriggered = false;
+    this.recentDisasterHistory = [];
   }
 }

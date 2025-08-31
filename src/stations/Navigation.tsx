@@ -5,6 +5,7 @@ import { updateNavigationValue } from "../store/stations/navigationStore";
 import { resumeJourney } from "../store/shipStore";
 import { DEBUG_MODE } from "../store/stations/engineeringStore";
 import { Players } from "../types";
+import { StationTitle } from "../components/StationTitle";
 
 export const Navigation: React.FC = () => {
   const dispatch = useDispatch();
@@ -74,7 +75,7 @@ export const Navigation: React.FC = () => {
 
   return (
     <div className="bg-gray-800 p-6 h-full">
-      <h2 className="text-white text-xl font-mono mb-4">Navigation Station</h2>
+      <StationTitle>Navigation Station</StationTitle>
 
       {/* Navigation Controls Section */}
       <div className="space-y-6">
