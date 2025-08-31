@@ -52,7 +52,7 @@ export const HomePage: React.FC = () => {
               Welcome to Starship Command!
               <br />
               This is a two player game that involves communication to solve
-              problems on your ships.
+              problems on your ships, so you can escape the solar system together!.
               <br />
               Make sure that both of you choose a different ship, and good luck!
             </p>
