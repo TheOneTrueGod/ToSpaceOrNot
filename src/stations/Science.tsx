@@ -420,6 +420,32 @@ const FuelMixingGame: React.FC = () => {
               maxLayers={requiredMixtureLength}
               isActive={true}
             />
+            {/* Check if mixture is full but incorrect */}
+            {scienceState.fuelMixture.activeTube.layers.length === requiredMixtureLength && (() => {
+              const currentTargetMixture = currentPlayer === Players.PLAYER_ONE
+                ? scienceState.fuelMixture.correctMixture.ownShip
+                : scienceState.fuelMixture.correctMixture.otherShip;
+              
+              const previousTargetMixture = currentPlayer === Players.PLAYER_ONE
+                ? scienceState.fuelMixture.previousCorrectMixture.ownShip
+                : scienceState.fuelMixture.previousCorrectMixture.otherShip;
+              
+              const matchesCurrent = scienceState.fuelMixture.activeTube.layers.every(
+                (fuel, index) => fuel === currentTargetMixture[index]
+              );
+              const matchesPrevious = scienceState.fuelMixture.activeTube.layers.every(
+                (fuel, index) => fuel === previousTargetMixture[index]
+              );
+              
+              if (!matchesCurrent && !matchesPrevious) {
+                return (
+                  <p className="text-red-500 text-sm font-mono text-center mt-2">
+                    Incorrect Mixture
+                  </p>
+                );
+              }
+              return null;
+            })()}
           </div>
 
           <div className="flex flex-col h-full gap-4">
