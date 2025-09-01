@@ -8,7 +8,7 @@ import { DebugPanel } from "../components/DebugPanel";
 import { dungeonMaster } from "../systems/DungeonMaster";
 import { Players } from "../types";
 
-const DEBUG_MODE = true;
+export const DEBUG_MODE = false;
 
 export const PlayPage: React.FC = () => {
   const currentPlayer = useSelector(

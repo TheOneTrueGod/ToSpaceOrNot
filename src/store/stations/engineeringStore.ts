@@ -117,9 +117,6 @@ export const generatePanelState = (
   return connections;
 };
 
-// Debug mode flag
-export const DEBUG_MODE = true;
-
 // Panel to system mapping - hardcoded for consistency across games
 export const PANEL_SYSTEM_MAPPING: { [panelName: string]: string } = {
   A1b2: "Weapons",

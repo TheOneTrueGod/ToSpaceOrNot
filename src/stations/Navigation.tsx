@@ -3,9 +3,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
 import { updateNavigationValue } from "../store/stations/navigationStore";
 import { resumeJourney } from "../store/shipStore";
-import { DEBUG_MODE } from "../store/stations/engineeringStore";
 import { Players } from "../types";
 import { StationTitle } from "../components/StationTitle";
+import { DEBUG_MODE } from "../pages/PlayPage";
 
 export const Navigation: React.FC = () => {
   const dispatch = useDispatch();
@@ -15,7 +15,7 @@ export const Navigation: React.FC = () => {
     (state: RootState) => state.game.currentPlayer
   );
 
-  const [countdown, setCountdown] = useState<number | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Local state for input values
   const [localValues, setLocalValues] = useState({
@@ -43,28 +43,34 @@ export const Navigation: React.FC = () => {
     }));
 
     // Update the store
-    dispatch(updateNavigationValue({ axis, value: numValue }));
+    dispatch(updateNavigationValue({ axis, value: numValue, relative: false }));
+    
+    // Clear validation error when values change
+    if (validationError) {
+      setValidationError(null);
+    }
   };
 
   const handleResumeJourney = () => {
-    setCountdown(3);
-  };
-
-  // Countdown effect
-  useEffect(() => {
-    if (countdown !== null && countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (countdown === 0) {
-      // Blastoff!
-      setTimeout(() => {
-        dispatch(resumeJourney());
-        setCountdown(null);
-      }, 1000);
+    // Get the correct values for the current player
+    const correctValues = currentPlayer === Players.PLAYER_ONE
+      ? navigationState.correctValues.albatross
+      : navigationState.correctValues.kestrel;
+    
+    // Check if current values match correct values (with small tolerance for floating point)
+    const tolerance = 0.01;
+    const isValid = 
+      Math.abs(navigationState.current.pitch - correctValues.pitch) < tolerance &&
+      Math.abs(navigationState.current.yaw - correctValues.yaw) < tolerance &&
+      Math.abs(navigationState.current.roll - correctValues.roll) < tolerance;
+    
+    if (isValid) {
+      dispatch(resumeJourney());
+      setValidationError(null);
+    } else {
+      setValidationError("Invalid navigation values");
     }
-  }, [countdown, dispatch]);
+  };
 
   const getDistanceTraveled = () => {
     return (
@@ -76,6 +82,38 @@ export const Navigation: React.FC = () => {
   return (
     <div className="bg-gray-800 p-6 h-full">
       <StationTitle>Navigation Station</StationTitle>
+
+			 {/* Resume Journey Section - only shown during breaks */}
+			 {shipState.isOnBreak && (
+        <div className="mb-6 bg-gray-700 p-4 rounded-lg border border-gray-600">
+          <h3 className="text-white text-lg font-mono mb-3 text-center">
+            Journey Break
+          </h3>
+          <div className="text-center text-gray-300 font-mono text-sm mb-4">
+            <p>Distance traveled: {Math.floor(getDistanceTraveled())} km</p>
+            <p>Wait for your partner to reach this checkpoint.</p>
+            <p>Use this time to make repairs and prepare for the next leg.</p>
+            <p>
+              When both of you have reached this checkpoint, ensure correct navigation values
+              and resume the journey together!
+            </p>
+          </div>
+
+          <div className="text-center">
+            <button
+              onClick={handleResumeJourney}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-mono px-6 py-3 rounded-lg transition-colors"
+            >
+              Resume Journey
+            </button>
+            {validationError && (
+              <div className="text-red-400 text-sm font-mono mt-2">
+                {validationError}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Navigation Controls Section */}
       <div className="space-y-6">
@@ -219,50 +257,6 @@ export const Navigation: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Resume Journey Section - only shown during breaks */}
-      {shipState.isOnBreak && (
-        <div className="mt-6 bg-gray-700 p-4 rounded-lg border border-gray-600">
-          <h3 className="text-white text-lg font-mono mb-3 text-center">
-            Journey Break
-          </h3>
-          <div className="text-center text-gray-300 font-mono text-sm mb-4">
-            <p>Distance traveled: {Math.floor(getDistanceTraveled())} km</p>
-            <p>Wait for your partner to reach this checkpoint.</p>
-            <p>Use this time to make repairs and prepare for the next leg.</p>
-            <p>
-              When both of you have reached this checkpoint, countdown and
-              resume the journey together!.
-            </p>
-          </div>
-
-          {countdown !== null ? (
-            <div className="text-center">
-              {countdown > 0 ? (
-                <div className="text-white text-2xl font-mono font-bold">
-                  {countdown}
-                </div>
-              ) : (
-                <div className="text-green-400 text-xl font-mono font-bold">
-                  BLASTOFF!
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center">
-              <button
-                onClick={handleResumeJourney}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-mono px-6 py-3 rounded-lg transition-colors"
-              >
-                Resume Journey
-              </button>
-              <div className="text-gray-400 text-xs font-mono mt-2">
-                Count down: 3, 2, 1, Blastoff!
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };

@@ -7,12 +7,12 @@ import {
   toggleSchematicView,
 } from "../store/stations/engineeringStore";
 import {
-  DEBUG_MODE,
   PANEL_SYSTEM_MAPPING,
   getPenaltyMultiplier,
   countIncorrectConnections,
 } from "../store/stations/engineeringStore";
 import { StationTitle } from "../components/StationTitle";
+import { DEBUG_MODE } from "../pages/PlayPage";
 
 interface WireConnection {
   from: { type: "input" | "node" | "output"; index: number };
@@ -61,7 +61,7 @@ export const Engineering: React.FC = () => {
   const dispatch = useDispatch();
   const engineeringState = useSelector((state: RootState) => state.engineering);
   const currentPlayer = useSelector(
-    (state: RootState) => state.game.currentPlayer
+    (state: RootState) => state.game.currentPlayer || Players.PLAYER_ONE
   );
 
   // Get the other player's name
