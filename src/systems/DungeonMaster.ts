@@ -207,15 +207,15 @@ export class DungeonMaster {
     // Decrease fuel each game update, factoring in engineering penalties (only if not on break)
     if (!currentShipState.isOnBreak) {
       const baselineFuelConsumption = -1;
-      let fuelConsumption = baselineFuelConsumption;
+      const fuelConsumption = baselineFuelConsumption;
 
-      if (engineeringState) {
+      /*if (engineeringState) {
         const fuelPenalty = getFuelPenaltyMultiplier(
           engineeringState,
           currentPlayer
         );
         fuelConsumption *= fuelPenalty;
-      }
+      }*/
 
       store.dispatch(
         updateSystemValue({

@@ -20,6 +20,11 @@ import {
   DUMP_COOLDOWN_SECONDS,
   DUMP_ALL_COOLDOWN_SECONDS,
   FuelType,
+	REFUEL_COOLDOWN_NO_PENALTY_SECONDS,
+	DUMP_COOLDOWN_NO_PENALTY_SECONDS,
+	DUMP_ALL_COOLDOWN_NO_PENALTY_SECONDS,
+	getFuelCooldowns,
+	FUEL_TARGET_TIMEOUT,
 } from "../store/stations/scienceStore";
 import { getFuelPenaltyMultiplier } from "../store/stations/engineeringStore";
 import { updateSystemValue } from "../store/shipStore";
@@ -154,10 +159,7 @@ const FuelMixingGame: React.FC = () => {
     ? getFuelPenaltyMultiplier(engineeringState, currentPlayer || Players.PLAYER_ONE)
     : 1;
   
-  // Calculate penalty-adjusted cooldowns
-  const adjustedRefuelCooldown = Math.round(REFUEL_COOLDOWN_SECONDS * fuelPenalty);
-  const adjustedDumpCooldown = Math.round(DUMP_COOLDOWN_SECONDS * fuelPenalty);
-  const adjustedDumpAllCooldown = Math.round(DUMP_ALL_COOLDOWN_SECONDS * fuelPenalty);
+	const { refuel: adjustedRefuelCooldown, dump: adjustedDumpCooldown, dumpAll: adjustedDumpAllCooldown } = getFuelCooldowns(fuelPenalty);
   
   // Determine alert levels based on penalty multipliers (matching AutomaticAlertSystem logic)
   const getAlertSeverity = (penalty: number): 'Warning' | 'Danger' | 'Critical' | null => {
@@ -231,8 +233,8 @@ const FuelMixingGame: React.FC = () => {
 
   // Calculate countdown to next mixture change based on Unix timestamp
   const now = Date.now() / 1000; // Convert to seconds
-  const currentPeriod = Math.floor(now / 20) * 20; // Round down to nearest 20-second period
-  const nextPeriod = currentPeriod + 20;
+  const currentPeriod = Math.floor(now / FUEL_TARGET_TIMEOUT) * FUEL_TARGET_TIMEOUT; // Round down to nearest 20-second period
+  const nextPeriod = currentPeriod + FUEL_TARGET_TIMEOUT;
   const secondsUntilNextChange = Math.ceil(nextPeriod - now);
 
   useEffect(() => {
@@ -403,7 +405,7 @@ const FuelMixingGame: React.FC = () => {
                 disabled={isRefuelOnCooldown}
                 label="Restock"
                 cooldownRemaining={refuelCooldownRemaining}
-                maxCooldown={REFUEL_COOLDOWN_SECONDS}
+                maxCooldown={adjustedRefuelCooldown}
                 baseColor="bg-blue-600 hover:bg-blue-700"
                 showCooldownInLabel={false}
               />
@@ -436,7 +438,7 @@ const FuelMixingGame: React.FC = () => {
                 }
                 label="Dump one"
                 cooldownRemaining={dumpCooldownRemaining}
-                maxCooldown={DUMP_COOLDOWN_SECONDS}
+                maxCooldown={adjustedDumpCooldown}
                 baseColor="bg-orange-600 hover:bg-orange-700"
                 showCooldownInLabel={false}
               />
@@ -454,7 +456,7 @@ const FuelMixingGame: React.FC = () => {
                 }
                 label="Dump all"
                 cooldownRemaining={dumpAllCooldownRemaining}
-                maxCooldown={DUMP_ALL_COOLDOWN_SECONDS}
+                maxCooldown={adjustedDumpAllCooldown}
                 baseColor="bg-red-600 hover:bg-red-700"
                 showCooldownInLabel={false}
               />

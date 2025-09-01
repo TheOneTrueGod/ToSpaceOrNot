@@ -47,7 +47,7 @@ export class DisasterEvents {
       }
 
       // Increase impact time by distance multiplier (asteroids spawn farther away)
-      const baseImpactTime = 20 + Math.random() * 70; // 20-90 seconds
+      const baseImpactTime = 40 + Math.random() * 50; // 40-90 seconds
       const impactInSeconds = Math.round(baseImpactTime * distanceMultiplier);
 
       store.dispatch(
