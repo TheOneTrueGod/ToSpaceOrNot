@@ -41,7 +41,8 @@ const NAVIGATION_VALUES_BY_QUADRANT = {
 
 // Helper function to get current stage number based on quadrant (for backward compatibility)
 export const getCurrentNavigationStage = (distanceTraveled: number): number => {
-  const quadrant = getQuadrant(distanceTraveled);
+	// Offset by 1 so that we view the next quadrant's values when we're on a break
+  const quadrant = getQuadrant(distanceTraveled + 1);
   const quadrantToStage = {
     [Quadrant.Alpha]: 0,
     [Quadrant.Beta]: 1,

@@ -62,7 +62,8 @@ export const PULSE_FREQUENCY_ENABLED = false;
 
 // Get the required mixture length based on quadrant
 export const getMixtureLength = (distanceTraveled: number): number => {
-	const quadrant = getQuadrant(distanceTraveled);
+	const quadrant = getQuadrant(distanceTraveled - 1);
+	console.log("getMixtureLength.  quadrant: ", quadrant)
 	switch (quadrant) {
 		case Quadrant.Alpha:
 			return 3; // Easy mode in Alpha Quadrant
@@ -79,13 +80,11 @@ export const getMixtureLength = (distanceTraveled: number): number => {
 // Helper function to calculate actual cooldown with engineering penalty
 // This is now a pure function that takes the penalty as a parameter
 export const getFuelCooldowns = (fuelPenalty: number = 1): { 'refuel': number, 'dump': number, 'dumpAll': number } => {
-	console.log('fuel penalty', fuelPenalty)
 	const adjustedRefuelCooldown = fuelPenalty > 1 ? Math.round(REFUEL_COOLDOWN_NO_PENALTY_SECONDS * fuelPenalty) : REFUEL_COOLDOWN_SECONDS;
 	const adjustedDumpCooldown = fuelPenalty > 1 ? Math.round(DUMP_COOLDOWN_NO_PENALTY_SECONDS * fuelPenalty) : DUMP_COOLDOWN_SECONDS;
 	const adjustedDumpAllCooldown = fuelPenalty > 1 ? Math.round(DUMP_ALL_COOLDOWN_NO_PENALTY_SECONDS * fuelPenalty) : DUMP_ALL_COOLDOWN_SECONDS;
 
 	const fuelValues =  { 'refuel': adjustedRefuelCooldown, 'dump': adjustedDumpCooldown, 'dumpAll': adjustedDumpAllCooldown }
-	console.log('fuel Values', fuelValues)
 	return fuelValues;
 };
 

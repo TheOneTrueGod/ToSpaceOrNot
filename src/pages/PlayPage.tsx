@@ -1,16 +1,20 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
 import { StatusMonitor } from "../components/StatusMonitor";
 import { ShipManual } from "../components/ShipManual";
 import { Stations } from "../components/Stations";
+import { DebugPanel } from "../components/DebugPanel";
 import { dungeonMaster } from "../systems/DungeonMaster";
 import { Players } from "../types";
+
+const DEBUG_MODE = true;
 
 export const PlayPage: React.FC = () => {
   const currentPlayer = useSelector(
     (state: RootState) => state.game.currentPlayer
   );
+  const [debugDrawerOpen, setDebugDrawerOpen] = useState(false);
 
   useEffect(() => {
     // Start the dungeon master when the play page loads
@@ -48,7 +52,12 @@ export const PlayPage: React.FC = () => {
       </div>
 
       {/* Player indicator */}
-      <div className="fixed top-4 right-4 bg-gray-800 border border-gray-600 rounded-lg px-4 py-2">
+      <div 
+        className={`fixed top-4 right-4 bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 ${
+          DEBUG_MODE ? "cursor-pointer hover:bg-gray-700" : ""
+        }`}
+        onClick={() => DEBUG_MODE && setDebugDrawerOpen(true)}
+      >
         <div className="text-white font-semibold">
           Player:{" "}
           <span
@@ -60,6 +69,14 @@ export const PlayPage: React.FC = () => {
           </span>
         </div>
       </div>
+
+      {/* Debug Panel */}
+      {DEBUG_MODE && (
+        <DebugPanel
+          isOpen={debugDrawerOpen}
+          onClose={() => setDebugDrawerOpen(false)}
+        />
+      )}
     </div>
   );
 };

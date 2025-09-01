@@ -118,7 +118,7 @@ export const generatePanelState = (
 };
 
 // Debug mode flag
-export const DEBUG_MODE = false;
+export const DEBUG_MODE = true;
 
 // Panel to system mapping - hardcoded for consistency across games
 export const PANEL_SYSTEM_MAPPING: { [panelName: string]: string } = {

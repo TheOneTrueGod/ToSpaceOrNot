@@ -170,6 +170,15 @@ const shipSlice = createSlice({
       // Remove nav sync waiting alert
       state.alerts = state.alerts.filter(alert => alert.name !== "Waiting for Nav Sync");
     },
+    setDistanceTravelled: (state, action: PayloadAction<number>) => {
+      const distanceTravelled = action.payload;
+      // distanceToDestination.current is the remaining distance
+      // So we set it to max - traveled
+      state.distanceToDestination.current = Math.max(
+        0,
+        state.distanceToDestination.max - distanceTravelled
+      );
+    },
   },
 });
 
@@ -202,5 +211,6 @@ export const {
   resetShipState,
   startBreak,
   resumeJourney,
+  setDistanceTravelled,
 } = shipSlice.actions;
 export default shipSlice.reducer;

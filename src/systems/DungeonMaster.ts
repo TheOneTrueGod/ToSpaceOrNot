@@ -21,7 +21,6 @@ import {
 } from "../store/stations/navigationStore";
 import {
   getThrustPenaltyMultiplier,
-  getFuelPenaltyMultiplier,
   getPowerPenaltyMultiplier,
 } from "../store/stations/engineeringStore";
 import {
@@ -251,9 +250,6 @@ export class DungeonMaster {
     const currentGameTime =
       state.gameClock.minutes * 60 + state.gameClock.seconds;
 
-    // Trigger timed alerts
-    this.checkTimedAlerts(currentGameTime);
-
     // Apply alert effects every 10 game minutes (600 game seconds)
     if (currentGameTime > 0 && currentGameTime % 600 === 0) {
       this.applyAllAlertEffects();
@@ -263,7 +259,7 @@ export class DungeonMaster {
     this.checkAlertResolutions();
   }
 
-  private checkTimedAlerts(gameTime: number) {
+  private checkTimedAlerts() {
     /*// Warning alert after 15 seconds
     if (gameTime === 15 && !this.alertsTriggered.has("warning-15")) {
       const warningAlert = AlertSystem.createAlert(
