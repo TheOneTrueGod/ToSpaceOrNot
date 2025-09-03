@@ -130,6 +130,7 @@ export const Navigation: React.FC = () => {
               </label>
               <input
                 type="number"
+                min="0"
                 step="0.1"
                 value={localValues.pitch}
                 onChange={(e) => handleInputChange("pitch", e.target.value)}
@@ -144,6 +145,7 @@ export const Navigation: React.FC = () => {
               </label>
               <input
                 type="number"
+                min="0"
                 step="0.1"
                 value={localValues.yaw}
                 onChange={(e) => handleInputChange("yaw", e.target.value)}
@@ -158,6 +160,7 @@ export const Navigation: React.FC = () => {
               </label>
               <input
                 type="number"
+                min="0"
                 step="0.1"
                 value={localValues.roll}
                 onChange={(e) => handleInputChange("roll", e.target.value)}

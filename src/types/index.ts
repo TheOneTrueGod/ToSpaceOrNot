@@ -39,7 +39,7 @@ export const Players = {
 
 export type Player = typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO;
 
-export type StationType = 'Engineering' | 'Navigation' | 'Weapons' | 'Science';
+export type StationType = 'Engineering' | 'Navigation' | 'Weapons' | 'Science' | 'Main Screen';
 
 export interface StationState {
 	[key: string]: unknown;

@@ -20,22 +20,22 @@ const NAVIGATION_VALUES_BY_QUADRANT = {
   // Alpha Quadrant: 0-250km traveled
   [Quadrant.Alpha]: {
     albatross: { pitch: 15.5, yaw: 270.0, roll: 0.0 },
-    kestrel: { pitch: 12.3, yaw: 275.5, roll: -2.1 },
+    kestrel: { pitch: 12.3, yaw: 275.5, roll: 2.1 },
   },
   // Beta Quadrant: 250-500km traveled
   [Quadrant.Beta]: {
     albatross: { pitch: 18.7, yaw: 265.2, roll: 1.5 },
-    kestrel: { pitch: 16.1, yaw: 272.8, roll: -0.9 },
+    kestrel: { pitch: 16.1, yaw: 272.8, roll: 0.9 },
   },
   // Gamma Quadrant: 500-750km traveled
   [Quadrant.Gamma]: {
-    albatross: { pitch: 14.2, yaw: 278.3, roll: -1.2 },
+    albatross: { pitch: 14.2, yaw: 278.3, roll: 1.2 },
     kestrel: { pitch: 19.8, yaw: 268.7, roll: 2.3 },
   },
   // Delta Quadrant: 750-1000km traveled
   [Quadrant.Delta]: {
     albatross: { pitch: 17.6, yaw: 263.9, roll: 0.8 },
-    kestrel: { pitch: 13.4, yaw: 281.2, roll: -1.7 },
+    kestrel: { pitch: 13.4, yaw: 281.2, roll: 1.7 },
   },
 } as const;
 
@@ -82,10 +82,12 @@ export const navigationSlice = createSlice({
       }>
     ) => {
       const { axis, value, relative } = action.payload;
+      // Ensure value is never negative
+      const clampedValue = Math.max(0, value);
       if (relative) {
-        state.current[axis] += value;
+        state.current[axis] = Math.max(0, state.current[axis] + clampedValue);
       } else {
-        state.current[axis] = value;
+        state.current[axis] = clampedValue;
       }
     },
     resetNavigation: (

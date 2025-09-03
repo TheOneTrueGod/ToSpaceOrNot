@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../store';
+import { RootState } from '../../store';
 import {
   WEAPON_COLORS,
   MATERIAL_WEAKNESS,
@@ -9,20 +9,19 @@ import {
   popAsteroidLayer,
   WeaponType,
   Asteroid
-} from '../store/stations/weaponsStore';
-import { updateSystemValue } from '../store/shipStore';
-import { getWeaponsPenaltyMultiplier, getPowerPenaltyMultiplier } from '../store/stations/engineeringStore';
-import { Players } from '../types';
-import { StationTitle } from '../components/StationTitle';
+} from '../../store/stations/weaponsStore';
+import { updateSystemValue } from '../../store/shipStore';
+import { getWeaponsPenaltyMultiplier, getPowerPenaltyMultiplier } from '../../store/stations/engineeringStore';
+import { Players } from '../../types';
 import { AlertTriangle, AlertCircle, AlertOctagon } from 'lucide-react';
-import { WEAPONS_CANVAS_WIDTH, WEAPONS_CANVAS_HEIGHT } from '../constants/weaponsCanvas';
+import { WEAPONS_CANVAS_WIDTH, WEAPONS_CANVAS_HEIGHT } from '../../constants/weaponsCanvas';
 
 const CANVAS_WIDTH = WEAPONS_CANVAS_WIDTH;
 const CANVAS_HEIGHT = WEAPONS_CANVAS_HEIGHT;
 
 const toTotalSeconds = (t: { minutes: number; seconds: number }) => t.minutes * 60 + t.seconds;
 
-export const Weapons: React.FC = () => {
+export const WeaponsConsole: React.FC = () => {
   const dispatch = useDispatch();
   const asteroids = useSelector((s: RootState) => s.weapons.asteroids);
   const cooldownUntil = useSelector((s: RootState) => s.weapons.cooldownUntil);
@@ -265,7 +264,6 @@ export const Weapons: React.FC = () => {
 
   return (
     <div className="w-full">
-      <StationTitle>Weapons Station</StationTitle>
       <div className="flex justify-center">
         <canvas
           ref={canvasRef}
@@ -363,4 +361,3 @@ export const Weapons: React.FC = () => {
     </div>
   );
 };
-

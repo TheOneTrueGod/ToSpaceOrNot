@@ -13,7 +13,7 @@ interface StationStore {
 }
 
 const initialState: StationStore = {
-	activeStation: 'Engineering',
+	activeStation: 'Main Screen',
 	stationStates: {
 		Engineering: generateEngineeringState(),
 		Navigation: { course: 0, autopilot: false },

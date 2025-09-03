@@ -7,16 +7,16 @@ import { Engineering } from "../stations/Engineering";
 import { Weapons } from "../stations/Weapons";
 import { Navigation } from "../stations/Navigation";
 import { Science } from "../stations/Science";
+import { MainScreen } from "../stations/MainScreen";
 
 /*const playerStations: Record<Player, StationType[]> = {
   [Players.PLAYER_ONE]: ['Engineering', 'Weapons'],
   [Players.PLAYER_TWO]: ['Navigation', 'Science'],
 };*/
 const allStations: StationType[] = [
-  "Navigation",
-  "Science",
-  "Weapons",
+  "Main Screen",
   "Engineering",
+  "Science",
 ];
 
 interface StationCanvasProps {
@@ -128,6 +128,8 @@ const StationContent: React.FC<{ station: StationType }> = ({ station }) => {
       return <Navigation />;
     case "Science":
       return <Science />;
+    case "Main Screen":
+      return <MainScreen />;
     default:
       return <DefaultStationCanvas station={station} />;
   }

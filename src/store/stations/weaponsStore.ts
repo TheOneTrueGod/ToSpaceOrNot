@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { WEAPONS_CANVAS_WIDTH, WEAPONS_CANVAS_HEIGHT } from "../../constants/weaponsCanvas";
 
 export type WeaponType = "Phasers" | "Missiles" | "Railgun";
 
@@ -57,7 +58,7 @@ const pickRandomMaterial = (): MaterialType => {
   return mats[randomInt(0, mats.length - 1)];
 };
 
-const SPAWN_CANVAS = { width: 600, height: 400 };
+const SPAWN_CANVAS = { width: WEAPONS_CANVAS_WIDTH, height: WEAPONS_CANVAS_HEIGHT };
 
 const initialState: WeaponsState = {
   asteroids: [],
