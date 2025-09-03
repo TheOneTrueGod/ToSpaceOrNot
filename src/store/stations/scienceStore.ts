@@ -63,7 +63,6 @@ export const PULSE_FREQUENCY_ENABLED = false;
 // Get the required mixture length based on quadrant
 export const getMixtureLength = (distanceTraveled: number): number => {
 	const quadrant = getQuadrant(distanceTraveled - 1);
-	console.log("getMixtureLength.  quadrant: ", quadrant)
 	switch (quadrant) {
 		case Quadrant.Alpha:
 			return 3; // Easy mode in Alpha Quadrant

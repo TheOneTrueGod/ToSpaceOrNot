@@ -11,8 +11,9 @@ import {
   Asteroid
 } from '../store/stations/weaponsStore';
 import { updateSystemValue } from '../store/shipStore';
-import { getWeaponsPenaltyMultiplier, getPowerPenaltyMultiplier } from '../store/stations/engineeringStore';
-import { getEngineeringErrorMessage, getEngineeringSeverity, shouldHideInStation } from '../constants/engineeringErrors';
+import { getWeaponsPenaltyMultiplier } from '../store/stations/engineeringStore';
+import { getEngineeringAlerts } from '../constants/engineeringErrors';
+import { getSystemPenalties } from '../utils/engineeringPenalties';
 import { Players } from '../types';
 import { StationTitle } from '../components/StationTitle';
 import { AlertTriangle, AlertCircle, AlertOctagon, CheckCircle } from 'lucide-react';
@@ -203,16 +204,14 @@ export const Weapons: React.FC = () => {
     []
   );
 
-  // Get weapons-specific alerts based on penalty levels
-  const powerPenalty = engineeringState ? getPowerPenaltyMultiplier(engineeringState, currentPlayer || Players.PLAYER_ONE) : 1;
-  
-  // Determine alert levels based on penalty multipliers (matching AutomaticAlertSystem logic)
-  const weaponsAlertSeverity = getEngineeringSeverity(weaponsPenalty);
-  const powerAlertSeverity = getEngineeringSeverity(powerPenalty);
-  
-  // Check if alerts should be hidden in station display
-  const shouldShowWeaponsAlert = !shouldHideInStation('Weapons', weaponsAlertSeverity);
-  const shouldShowPowerAlert = !shouldHideInStation('Power', powerAlertSeverity);
+  // Get engineering alerts for this station (Weapons and Power systems)
+  const systemPenalties = getSystemPenalties(engineeringState, currentPlayer || Players.PLAYER_ONE);
+  const engineeringAlerts = getEngineeringAlerts(
+    systemPenalties,
+    ['Weapons', 'Power'],
+    'station'
+  );
+
   const powerLow = batteryPower.current < 5; // Minimum weapon power requirement
 
   const getAlertIcon = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical') => {
@@ -239,10 +238,6 @@ export const Weapons: React.FC = () => {
       default: // Base
         return 'bg-green-500/20 border-green-500 text-green-400';
     }
-  };
-
-  const getAlertMessage = (system: string, severity: 'Base' | 'Warning' | 'Danger' | 'Critical', penalty?: number): string => {
-    return getEngineeringErrorMessage(system, severity, penalty);
   };
 
   return (
@@ -315,23 +310,14 @@ export const Weapons: React.FC = () => {
       
       {/* Alerts Section */}
       <div className="mt-4 space-y-2">
-        {shouldShowWeaponsAlert && (
-          <div className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(weaponsAlertSeverity)}`}>
-            {getAlertIcon(weaponsAlertSeverity)}
+        {engineeringAlerts.map((alert, index) => (
+          <div key={`${alert.system}-${alert.severity}-${index}`} className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(alert.severity)}`}>
+            {getAlertIcon(alert.severity)}
             <span className="font-mono text-sm">
-              {getAlertMessage('Weapons', weaponsAlertSeverity, weaponsPenalty)}
+              {alert.message}
             </span>
           </div>
-        )}
-        
-        {shouldShowPowerAlert && (
-          <div className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(powerAlertSeverity)}`}>
-            {getAlertIcon(powerAlertSeverity)}
-            <span className="font-mono text-sm">
-              {getAlertMessage('Power', powerAlertSeverity, powerPenalty)}
-            </span>
-          </div>
-        )}
+        ))}
         
         {powerLow && (
           <div className="flex items-center gap-2 px-3 py-2 rounded border bg-red-500/20 border-red-500 text-red-400">

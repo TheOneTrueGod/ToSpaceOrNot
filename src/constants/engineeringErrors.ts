@@ -16,11 +16,13 @@ export const ENGINEERING_ERRORS: { [station: string]: StationErrors } = {
   Weapons: {
     Base: {
       shortDescription: 'System Nominal',
-      longDescription: 'All systems operating normally'
+      longDescription: 'All systems operating normally',
+			hideInSummary: true,
     },
     Warning: {
       shortDescription: 'Wiring Error',
-      longDescription: 'Cooldowns increased by {percentage}%'
+      longDescription: 'Cooldowns increased by {percentage}%',
+			hideInSummary: true,
     },
     Danger: {
       shortDescription: 'System Error',
@@ -34,11 +36,13 @@ export const ENGINEERING_ERRORS: { [station: string]: StationErrors } = {
   Power: {
     Base: {
       shortDescription: 'System Nominal',
-      longDescription: 'All systems operating normally'
+      longDescription: 'All systems operating normally',
+			hideInSummary: true,
     },
     Warning: {
       shortDescription: 'Wiring Error',
-      longDescription: 'Regeneration slowed by {percentage}%'
+      longDescription: 'Regeneration slowed by {percentage}%',
+			hideInSummary: true,
     },
     Danger: {
       shortDescription: 'System Error',
@@ -52,11 +56,13 @@ export const ENGINEERING_ERRORS: { [station: string]: StationErrors } = {
   Fuel: {
     Base: {
       shortDescription: 'System Nominal',
-      longDescription: 'All systems operating normally'
+      longDescription: 'All systems operating normally',
+			hideInSummary: true,
     },
     Warning: {
       shortDescription: 'Wiring Error',
-      longDescription: 'Cooldowns increased by {percentage}%'
+      longDescription: 'Cooldowns increased by {percentage}%',
+			hideInSummary: true,
     },
     Danger: {
       shortDescription: 'System Error',
@@ -66,7 +72,27 @@ export const ENGINEERING_ERRORS: { [station: string]: StationErrors } = {
       shortDescription: 'System Critical',
       longDescription: 'Cooldowns increased by {percentage}%'
     }
-  }
+  },
+	Thrust: {
+    Base: {
+      shortDescription: 'System Nominal',
+      longDescription: 'All systems operating normally',
+			hideInSummary: true,
+    },
+    Warning: {
+      shortDescription: 'Wiring Error',
+      longDescription: 'Cooldowns increased by {percentage}%',
+			hideInSummary: true,
+    },
+    Danger: {
+      shortDescription: 'System Error',
+      longDescription: 'Cooldowns increased by {percentage}%'
+    },
+    Critical: {
+      shortDescription: 'System Critical',
+      longDescription: 'Cooldowns increased by {percentage}%'
+    }
+  },
 };
 
 // Helper function to get formatted error message
@@ -149,4 +175,46 @@ export const shouldHideInSummary = (station: string, severity: 'Base' | 'Warning
   const errors = ENGINEERING_ERRORS[station];
   if (!errors) return false;
   return errors[severity].hideInSummary === true;
+};
+
+// Engineering alert object interface
+export interface EngineeringAlert {
+  system: string;
+  severity: 'Base' | 'Warning' | 'Danger' | 'Critical';
+  message: string;
+  penalty?: number;
+}
+
+// Shared function to get engineering alerts for stations and StatusMonitor
+export const getEngineeringAlerts = (
+  systemPenalties: Array<{ name: string; penalty: number }>,
+  includeSystems?: string[],
+  context: 'station' | 'summary' = 'summary'
+): EngineeringAlert[] => {
+  // Filter systems if includeSystems is provided
+  const systemsToCheck = includeSystems 
+    ? systemPenalties.filter(system => includeSystems.includes(system.name))
+    : systemPenalties;
+
+  const alerts: EngineeringAlert[] = [];
+
+  systemsToCheck.forEach(system => {
+    const severity = getEngineeringSeverity(system.penalty);
+    
+    // Check if this alert should be hidden based on context
+    const shouldHide = context === 'station' 
+      ? shouldHideInStation(system.name, severity)
+      : shouldHideInSummary(system.name, severity);
+      
+    if (!shouldHide) {
+      alerts.push({
+        system: system.name,
+        severity,
+        message: getEngineeringErrorMessage(system.name, severity, system.penalty),
+        penalty: system.penalty
+      });
+    }
+  });
+
+  return alerts;
 };

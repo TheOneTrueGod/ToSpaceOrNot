@@ -2,14 +2,7 @@ import { Alert, Players } from '../types';
 import { ShipState } from '../types';
 import { WeaponsState } from '../store/stations/weaponsStore';
 import { NavigationState } from '../store/stations/navigationStore';
-import {
-  EngineeringState,
-  getThrustPenaltyMultiplier,
-  getFuelPenaltyMultiplier,
-  getPowerPenaltyMultiplier,
-  getWeaponsPenaltyMultiplier,
-} from '../store/stations/engineeringStore';
-import { getEngineeringAlertTitle, getEngineeringAlertDescription, shouldHideInSummary } from '../constants/engineeringErrors';
+import { EngineeringState } from '../store/stations/engineeringStore';
 
 export class AutomaticAlertSystem {
   private static instance: AutomaticAlertSystem;
@@ -293,122 +286,15 @@ export class AutomaticAlertSystem {
   }
 
   private checkEngineeringAlerts(
-    engineeringState: EngineeringState | undefined,
-    currentTime: { minutes: number; seconds: number },
-    currentPlayer: string
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _engineeringState: EngineeringState | undefined,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _currentTime: { minutes: number; seconds: number },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _currentPlayer: string
   ): Alert[] {
-    const alerts: Alert[] = [];
-    
-    if (!engineeringState) return alerts;
-
-    // Define systems and their penalty functions
-    const systems = [
-      {
-        name: "Weapons",
-        penalty: getWeaponsPenaltyMultiplier(engineeringState, currentPlayer as typeof Players.PLAYER_ONE),
-        warningId: 'weapons-warning',
-        dangerId: 'weapons-danger',
-        criticalId: 'weapons-critical'
-      },
-      {
-        name: "Fuel",
-        penalty: getFuelPenaltyMultiplier(engineeringState, currentPlayer as typeof Players.PLAYER_ONE),
-        warningId: 'fuel-warning',
-        dangerId: 'fuel-danger',
-        criticalId: 'fuel-critical-eng'
-      },
-      {
-        name: "Power",
-        penalty: getPowerPenaltyMultiplier(engineeringState, currentPlayer as typeof Players.PLAYER_ONE),
-        warningId: 'power-warning',
-        dangerId: 'power-danger',
-        criticalId: 'power-critical'
-      },
-      {
-        name: "Thrust",
-        penalty: getThrustPenaltyMultiplier(engineeringState, currentPlayer as typeof Players.PLAYER_ONE),
-        warningId: 'thrust-warning',
-        dangerId: 'thrust-danger',
-        criticalId: 'thrust-critical'
-      },
-    ];
-
-    // Process each system with three severity levels based on penalty multiplier
-    systems.forEach((system) => {
-      // Remove old alerts if penalty changed
-      if (system.penalty < 1.5) {
-        this.currentAlerts.delete(system.warningId);
-        this.currentAlerts.delete(system.dangerId);
-        this.currentAlerts.delete(system.criticalId);
-      } else if (system.penalty < 2.0) {
-        this.currentAlerts.delete(system.dangerId);
-        this.currentAlerts.delete(system.criticalId);
-      } else if (system.penalty < 5.0) {
-        this.currentAlerts.delete(system.warningId);
-        this.currentAlerts.delete(system.criticalId);
-      } else {
-        this.currentAlerts.delete(system.warningId);
-        this.currentAlerts.delete(system.dangerId);
-      }
-
-      // Add appropriate alert based on penalty level
-      if (system.penalty >= 5.0) {
-        // Critical: 5x multiplier (heavy penalty)
-        const alertId = system.criticalId;
-        if (!shouldHideInSummary(system.name, 'Critical')) {
-          if (!this.currentAlerts.has(alertId)) {
-            const alert = this.createAlert(
-              alertId,
-              getEngineeringAlertTitle(system.name, 'Critical'),
-              getEngineeringAlertDescription(system.name, 'Critical', system.penalty),
-              'Critical',
-              currentTime
-            );
-            this.currentAlerts.set(alertId, alert);
-            alerts.push(alert);
-          } else {
-            alerts.push(this.currentAlerts.get(alertId)!);
-          }
-        }
-      } else if (system.penalty >= 2.0) {
-        // Danger: 2x multiplier (medium penalty)
-        const alertId = system.dangerId;
-        if (!shouldHideInSummary(system.name, 'Danger')) {
-          if (!this.currentAlerts.has(alertId)) {
-            const alert = this.createAlert(
-              alertId,
-              getEngineeringAlertTitle(system.name, 'Danger'),
-              getEngineeringAlertDescription(system.name, 'Danger', system.penalty),
-              'Danger',
-              currentTime
-            );
-            this.currentAlerts.set(alertId, alert);
-            alerts.push(alert);
-          } else {
-            alerts.push(this.currentAlerts.get(alertId)!);
-          }
-        }
-      } else if (system.penalty >= 1.5) {
-        // Warning: 1.5x multiplier (light penalty)
-        const alertId = system.warningId;
-        if (!shouldHideInSummary(system.name, 'Warning')) {
-          if (!this.currentAlerts.has(alertId)) {
-            const alert = this.createAlert(
-              alertId,
-              getEngineeringAlertTitle(system.name, 'Warning'),
-              getEngineeringAlertDescription(system.name, 'Warning', system.penalty),
-              'Warning',
-              currentTime
-            );
-            this.currentAlerts.set(alertId, alert);
-            alerts.push(alert);
-          } else {
-            alerts.push(this.currentAlerts.get(alertId)!);
-          }
-        }
-      }
-    });
-
-    return alerts;
+    // Engineering alerts are now handled directly by individual stations and StatusMonitor
+    // Return empty array to prevent duplication in ship's alert system
+    return [];
   }
 }

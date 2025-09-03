@@ -21,7 +21,8 @@ import {
 	FUEL_TARGET_TIMEOUT,
 } from "../store/stations/scienceStore";
 import { getFuelPenaltyMultiplier } from "../store/stations/engineeringStore";
-import { getEngineeringErrorMessage, getEngineeringSeverity, shouldHideInStation } from "../constants/engineeringErrors";
+import { getEngineeringAlerts } from "../constants/engineeringErrors";
+import { getSystemPenalties } from "../utils/engineeringPenalties";
 import { updateSystemValue } from "../store/shipStore";
 import { ButtonWithProgressBar } from "../components/ButtonWithProgressBar";
 import { StationTitle } from "../components/StationTitle";
@@ -156,11 +157,13 @@ const FuelMixingGame: React.FC = () => {
   
 	const { refuel: adjustedRefuelCooldown, dump: adjustedDumpCooldown, dumpAll: adjustedDumpAllCooldown } = getFuelCooldowns(fuelPenalty);
   
-  // Determine alert levels based on penalty multipliers (matching AutomaticAlertSystem logic)
-  const fuelAlertSeverity = getEngineeringSeverity(fuelPenalty);
-  
-  // Check if alert should be hidden in station display
-  const shouldShowFuelAlert = !shouldHideInStation('Fuel', fuelAlertSeverity);
+  // Get engineering alerts for this station (Fuel system only)
+  const systemPenalties = getSystemPenalties(engineeringState, currentPlayer || Players.PLAYER_ONE);
+  const engineeringAlerts = getEngineeringAlerts(
+    systemPenalties,
+    ['Fuel'],
+    'station'
+  );
 
   const getAlertIcon = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical') => {
     switch (severity) {
@@ -186,10 +189,6 @@ const FuelMixingGame: React.FC = () => {
       default: // Base
         return 'bg-green-500/20 border-green-500 text-green-400';
     }
-  };
-
-  const getAlertMessage = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical', penalty?: number): string => {
-    return getEngineeringErrorMessage('Fuel', severity, penalty);
   };
 
   // Calculate distance traveled and required mixture length
@@ -516,14 +515,14 @@ const FuelMixingGame: React.FC = () => {
       
       {/* Alerts Section */}
       <div className="mt-4 space-y-2">
-        {shouldShowFuelAlert && (
-          <div className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(fuelAlertSeverity)}`}>
-            {getAlertIcon(fuelAlertSeverity)}
+        {engineeringAlerts.map((alert, index) => (
+          <div key={`${alert.system}-${alert.severity}-${index}`} className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(alert.severity)}`}>
+            {getAlertIcon(alert.severity)}
             <span className="font-mono text-sm">
-              {getAlertMessage(fuelAlertSeverity, fuelPenalty)}
+              {alert.message}
             </span>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );

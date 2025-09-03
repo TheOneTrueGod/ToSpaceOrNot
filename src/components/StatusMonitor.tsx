@@ -9,8 +9,11 @@ import {
   AlertCircle,
   XCircle,
   CheckCircle,
+  AlertOctagon,
 } from "lucide-react";
 import { disasterEventBus } from "../systems/DisasterEventBus";
+import { getEngineeringAlerts } from "../constants/engineeringErrors";
+import { getSystemPenalties } from "../utils/engineeringPenalties";
 
 // Constants for asteroid rendering
 const ASTEROID_MIN_SIZE = 10;
@@ -19,6 +22,8 @@ const ASTEROID_MAX_SIZE = 20;
 export const StatusMonitor: React.FC = () => {
   const shipState = useSelector((state: RootState) => state.ship);
   const weaponsState = useSelector((state: RootState) => state.weapons);
+  const engineeringState = useSelector((state: RootState) => state.engineering);
+  const gameState = useSelector((state: RootState) => state.game);
   const rocketCanvasRef = useRef<HTMLCanvasElement>(null);
   const asteroidCanvasRef = useRef<HTMLCanvasElement>(null);
   const asteroidAnglesRef = useRef<Map<string, number>>(new Map());
@@ -123,6 +128,45 @@ export const StatusMonitor: React.FC = () => {
         return <AlertCircle size={16} className="text-gray-400" />;
     }
   };
+
+  // Engineering alert specific functions
+  const getEngineeringAlertColor = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical') => {
+    switch (severity) {
+      case 'Critical':
+        return 'text-red-400 bg-red-900/20 border-red-500';
+      case 'Danger':
+        return 'text-orange-400 bg-orange-900/20 border-orange-500';
+      case 'Warning':
+        return 'text-yellow-400 bg-yellow-900/20 border-yellow-500';
+      case 'Base':
+        return 'text-green-400 bg-green-900/20 border-green-500';
+      default:
+        return 'text-gray-400 bg-gray-900/20 border-gray-500';
+    }
+  };
+
+  const getEngineeringAlertIcon = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical') => {
+    switch (severity) {
+      case 'Critical':
+        return <AlertOctagon size={16} className="text-red-400" />;
+      case 'Danger':
+        return <AlertTriangle size={16} className="text-orange-400" />;
+      case 'Warning':
+        return <AlertCircle size={16} className="text-yellow-400" />;
+      case 'Base':
+        return <CheckCircle size={16} className="text-green-400" />;
+      default:
+        return <AlertCircle size={16} className="text-gray-400" />;
+    }
+  };
+
+  // Get engineering alerts for status monitor
+  const systemPenalties = getSystemPenalties(engineeringState, gameState.currentPlayer || 'Albatross');
+  const engineeringAlerts = getEngineeringAlerts(
+    systemPenalties,
+    undefined, // Include all systems
+    'summary'
+  );
 
   // Render asteroids on their own canvas
   useEffect(() => {
@@ -352,11 +396,12 @@ export const StatusMonitor: React.FC = () => {
         </div>
       </div>
 
-      {/* Alerts Section */}
+      {/* Ship Alerts Section */}
       {shipState.alerts.length > 0 && (
         <div className="mt-3 bg-gray-800 border border-gray-600 rounded p-3">
+          <div className="text-xs text-gray-400 font-mono mb-2 uppercase tracking-wide">Ship Alerts</div>
           <div className="grid grid-cols-2 gap-2">
-            {shipState.alerts.slice(0, 8).map((alert) => (
+            {shipState.alerts.slice(0, 6).map((alert) => (
               <div
                 key={alert.id}
                 className={`p-2 rounded border ${getSeverityColor(
@@ -367,6 +412,27 @@ export const StatusMonitor: React.FC = () => {
                   {getSeverityIcon(alert.severity)}
                   <div className="font-semibold text-xs">{alert.name}</div>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Engineering Alerts Section */}
+      {engineeringAlerts.length > 0 && (
+        <div className="mt-3 bg-gray-800 border border-gray-600 rounded p-3">
+          <div className="text-xs text-gray-400 font-mono mb-2 uppercase tracking-wide">Engineering Status</div>
+          <div className="grid grid-cols-2 gap-2">
+            {engineeringAlerts.slice(0, 8).map((alert, index) => (
+              <div
+                key={`${alert.system}-${alert.severity}-${index}`}
+                className={`p-2 rounded border ${getEngineeringAlertColor(alert.severity)}`}
+              >
+                <div className="flex items-center space-x-2">
+                  {getEngineeringAlertIcon(alert.severity)}
+                  <div className="font-semibold text-xs">{alert.system}</div>
+                </div>
+                <div className="text-xs mt-1 opacity-75">{alert.message}</div>
               </div>
             ))}
           </div>
