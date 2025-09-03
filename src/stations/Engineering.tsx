@@ -593,7 +593,10 @@ export const Engineering: React.FC = () => {
 				</button>
 			</div>
 			<div className="grid grid-cols-2 gap-6">
-				{engineeringState.panelOrder.map((panelName) =>
+				{(engineeringState.isViewingSchematic 
+					? engineeringState.schematicPanelOrder 
+					: engineeringState.panelOrder
+				).map((panelName) =>
 					panelName === openPanel
 						? renderOpenPanel(panelName)
 						: renderClosedPanel(panelName)

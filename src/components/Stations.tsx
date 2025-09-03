@@ -15,8 +15,8 @@ import { MainScreen } from "../stations/MainScreen";
 };*/
 const allStations: StationType[] = [
   "Main Screen",
-  "Engineering",
   "Science",
+  "Engineering",
 ];
 
 interface StationCanvasProps {

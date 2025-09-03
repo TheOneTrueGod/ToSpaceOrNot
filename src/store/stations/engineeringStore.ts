@@ -28,6 +28,7 @@ export interface EngineeringState {
     };
   };
   panelOrder: string[];
+  schematicPanelOrder: string[];
   isViewingSchematic: boolean;
 }
 
@@ -182,13 +183,18 @@ export const generateEngineeringState = (
     };
   });
 
+  // Create two different random orderings for panels
+  const panelOrder = [...PANEL_NAMES].sort(() => Math.random() - 0.5);
+  const schematicPanelOrder = [...PANEL_NAMES].sort(() => Math.random() - 0.5);
+
   return {
     panels,
     correctState: {
       [Players.PLAYER_ONE]: albatrossCorrectState,
       [Players.PLAYER_TWO]: kestrelCorrectState,
     },
-    panelOrder: [...PANEL_NAMES].sort(() => Math.random() - 0.5),
+    panelOrder,
+    schematicPanelOrder,
     isViewingSchematic: false,
   };
 };
@@ -359,6 +365,7 @@ export const engineeringSlice = createSlice({
       state.panels = newState.panels;
       state.correctState = newState.correctState;
       state.panelOrder = newState.panelOrder;
+      state.schematicPanelOrder = newState.schematicPanelOrder;
       state.isViewingSchematic = false;
     },
     toggleSchematicView: (state) => {
