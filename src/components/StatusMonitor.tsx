@@ -10,7 +10,6 @@ import {
   XCircle,
   CheckCircle,
 } from "lucide-react";
-import { Asteroid } from "../store/stations/weaponsStore";
 import { disasterEventBus } from "../systems/DisasterEventBus";
 
 // Constants for asteroid rendering

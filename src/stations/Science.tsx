@@ -30,7 +30,7 @@ const PulseButton: React.FC = () => {
   const dispatch = useDispatch();
   const scienceState = useSelector((state: RootState) => state.science);
   const [isPulsing, setIsPulsing] = useState(false);
-  const pulseIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pulseIntervalRef = useRef<number | null>(null);
 
   const isCorrect = isPulseFrequencyCorrect(scienceState);
 

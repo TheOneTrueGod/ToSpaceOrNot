@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
 import { StatusMonitor } from "../components/StatusMonitor";
-import { ShipManual } from "../components/ShipManual";
 import { Stations } from "../components/Stations";
 import { DebugPanel } from "../components/DebugPanel";
 import { dungeonMaster } from "../systems/DungeonMaster";
