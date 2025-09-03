@@ -154,15 +154,50 @@ export const Engineering: React.FC = () => {
 			openPanel &&
 			!engineeringState.isViewingSchematic
 		) {
-			const newConnection: WireConnection = {
-				from: dragState.from,
-				to: { type, index },
-			};
+			let fromNode = dragState.from;
+			let toNode = { type, index };
 
 			// Don't allow connections to the same node
-			if (dragState.from.type === type && dragState.from.index === index) {
+			if (fromNode.type === type && fromNode.index === index) {
 				return;
 			}
+
+			// Apply connection direction rules
+			// Rule 1: Only allow input -> node, node -> output connections
+			// Rule 2: Convert invalid directions: output -> node becomes node -> output
+			// Rule 3: Convert invalid directions: node -> input becomes input -> node  
+			// Rule 4: Reject node -> node connections
+
+			// Check if it's a valid connection (input -> node or node -> output)
+			const isValidDirection = 
+				(fromNode.type === "input" && toNode.type === "node") ||
+				(fromNode.type === "node" && toNode.type === "output");
+
+			// Handle direction conversions
+			if (!isValidDirection) {
+				// Reject node -> node connections
+				if (fromNode.type === "node" && toNode.type === "node") {
+					return;
+				}
+
+				// Convert output -> node to node -> output
+				if (fromNode.type === "output" && toNode.type === "node") {
+					[fromNode, toNode] = [toNode, fromNode];
+				}
+				// Convert node -> input to input -> node
+				else if (fromNode.type === "node" && toNode.type === "input") {
+					[fromNode, toNode] = [toNode, fromNode];
+				}
+				// Reject any other invalid combinations (input -> input, output -> output, input -> output, output -> input)
+				else {
+					return;
+				}
+			}
+
+			const newConnection: WireConnection = {
+				from: fromNode,
+				to: toNode,
+			};
 
 			const currentPanel = engineeringState.panels[openPanel];
 			const updatedConnections = [...currentPanel.connections, newConnection];
