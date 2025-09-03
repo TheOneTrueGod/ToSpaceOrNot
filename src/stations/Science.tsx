@@ -21,10 +21,11 @@ import {
 	FUEL_TARGET_TIMEOUT,
 } from "../store/stations/scienceStore";
 import { getFuelPenaltyMultiplier } from "../store/stations/engineeringStore";
+import { getEngineeringErrorMessage, getEngineeringSeverity, shouldHideInStation } from "../constants/engineeringErrors";
 import { updateSystemValue } from "../store/shipStore";
 import { ButtonWithProgressBar } from "../components/ButtonWithProgressBar";
 import { StationTitle } from "../components/StationTitle";
-import { AlertTriangle, AlertCircle, AlertOctagon } from 'lucide-react';
+import { AlertTriangle, AlertCircle, AlertOctagon, CheckCircle } from 'lucide-react';
 
 const PulseButton: React.FC = () => {
   const dispatch = useDispatch();
@@ -156,47 +157,39 @@ const FuelMixingGame: React.FC = () => {
 	const { refuel: adjustedRefuelCooldown, dump: adjustedDumpCooldown, dumpAll: adjustedDumpAllCooldown } = getFuelCooldowns(fuelPenalty);
   
   // Determine alert levels based on penalty multipliers (matching AutomaticAlertSystem logic)
-  const getAlertSeverity = (penalty: number): 'Warning' | 'Danger' | 'Critical' | null => {
-    if (penalty >= 5.0) return 'Critical';
-    if (penalty >= 2.0) return 'Danger';
-    if (penalty >= 1.5) return 'Warning';
-    return null;
-  };
+  const fuelAlertSeverity = getEngineeringSeverity(fuelPenalty);
+  
+  // Check if alert should be hidden in station display
+  const shouldShowFuelAlert = !shouldHideInStation('Fuel', fuelAlertSeverity);
 
-  const fuelAlertSeverity = getAlertSeverity(fuelPenalty);
-
-  const getAlertIcon = (severity: 'Warning' | 'Danger' | 'Critical') => {
+  const getAlertIcon = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical') => {
     switch (severity) {
       case 'Critical':
         return <AlertOctagon className="w-5 h-5" />;
       case 'Danger':
         return <AlertTriangle className="w-5 h-5" />;
-      default:
+      case 'Warning':
         return <AlertCircle className="w-5 h-5" />;
+      default: // Base
+        return <CheckCircle className="w-5 h-5" />;
     }
   };
 
-  const getAlertColor = (severity: 'Warning' | 'Danger' | 'Critical') => {
+  const getAlertColor = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical') => {
     switch (severity) {
       case 'Critical':
         return 'bg-red-500/20 border-red-500 text-red-400';
       case 'Danger':
         return 'bg-orange-500/20 border-orange-500 text-orange-400';
-      default:
+      case 'Warning':
         return 'bg-yellow-500/20 border-yellow-500 text-yellow-400';
+      default: // Base
+        return 'bg-green-500/20 border-green-500 text-green-400';
     }
   };
 
-  const getAlertMessage = (severity: 'Warning' | 'Danger' | 'Critical', penalty: number): string => {
-    const increase = Math.round((penalty - 1) * 100);
-    switch (severity) {
-      case 'Critical':
-        return `Fuel System Critical: Cooldowns increased by ${increase}%`;
-      case 'Danger':
-        return `Fuel System Error: Cooldowns increased by ${increase}%`;
-      default:
-        return `Fuel Wiring Error: Cooldowns increased by ${increase}%`;
-    }
+  const getAlertMessage = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical', penalty?: number): string => {
+    return getEngineeringErrorMessage('Fuel', severity, penalty);
   };
 
   // Calculate distance traveled and required mixture length
@@ -523,7 +516,7 @@ const FuelMixingGame: React.FC = () => {
       
       {/* Alerts Section */}
       <div className="mt-4 space-y-2">
-        {fuelAlertSeverity && (
+        {shouldShowFuelAlert && (
           <div className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(fuelAlertSeverity)}`}>
             {getAlertIcon(fuelAlertSeverity)}
             <span className="font-mono text-sm">

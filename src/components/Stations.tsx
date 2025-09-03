@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../store";
 import { setActiveStation } from "../store/stationStore";
-import { StationType, Players } from "../types";
+import { StationType } from "../types";
 import { Engineering } from "../stations/Engineering";
 import { Weapons } from "../stations/Weapons";
 import { Navigation } from "../stations/Navigation";

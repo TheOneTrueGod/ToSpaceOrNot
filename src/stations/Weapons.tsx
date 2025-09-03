@@ -12,9 +12,10 @@ import {
 } from '../store/stations/weaponsStore';
 import { updateSystemValue } from '../store/shipStore';
 import { getWeaponsPenaltyMultiplier, getPowerPenaltyMultiplier } from '../store/stations/engineeringStore';
+import { getEngineeringErrorMessage, getEngineeringSeverity, shouldHideInStation } from '../constants/engineeringErrors';
 import { Players } from '../types';
 import { StationTitle } from '../components/StationTitle';
-import { AlertTriangle, AlertCircle, AlertOctagon } from 'lucide-react';
+import { AlertTriangle, AlertCircle, AlertOctagon, CheckCircle } from 'lucide-react';
 import { WEAPONS_CANVAS_WIDTH, WEAPONS_CANVAS_HEIGHT } from '../constants/weaponsCanvas';
 
 const CANVAS_WIDTH = WEAPONS_CANVAS_WIDTH;
@@ -206,61 +207,42 @@ export const Weapons: React.FC = () => {
   const powerPenalty = engineeringState ? getPowerPenaltyMultiplier(engineeringState, currentPlayer || Players.PLAYER_ONE) : 1;
   
   // Determine alert levels based on penalty multipliers (matching AutomaticAlertSystem logic)
-  const getAlertSeverity = (penalty: number): 'Warning' | 'Danger' | 'Critical' | null => {
-    if (penalty >= 5.0) return 'Critical';
-    if (penalty >= 2.0) return 'Danger';
-    if (penalty >= 1.5) return 'Warning';
-    return null;
-  };
-
-  const weaponsAlertSeverity = getAlertSeverity(weaponsPenalty);
-  const powerAlertSeverity = getAlertSeverity(powerPenalty);
+  const weaponsAlertSeverity = getEngineeringSeverity(weaponsPenalty);
+  const powerAlertSeverity = getEngineeringSeverity(powerPenalty);
+  
+  // Check if alerts should be hidden in station display
+  const shouldShowWeaponsAlert = !shouldHideInStation('Weapons', weaponsAlertSeverity);
+  const shouldShowPowerAlert = !shouldHideInStation('Power', powerAlertSeverity);
   const powerLow = batteryPower.current < 5; // Minimum weapon power requirement
 
-  const getAlertIcon = (severity: 'Warning' | 'Danger' | 'Critical') => {
+  const getAlertIcon = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical') => {
     switch (severity) {
       case 'Critical':
         return <AlertOctagon className="w-5 h-5" />;
       case 'Danger':
         return <AlertTriangle className="w-5 h-5" />;
-      default:
+      case 'Warning':
         return <AlertCircle className="w-5 h-5" />;
+      default: // Base
+        return <CheckCircle className="w-5 h-5" />;
     }
   };
 
-  const getAlertColor = (severity: 'Warning' | 'Danger' | 'Critical') => {
+  const getAlertColor = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical') => {
     switch (severity) {
       case 'Critical':
         return 'bg-red-500/20 border-red-500 text-red-400';
       case 'Danger':
         return 'bg-orange-500/20 border-orange-500 text-orange-400';
-      default:
+      case 'Warning':
         return 'bg-yellow-500/20 border-yellow-500 text-yellow-400';
+      default: // Base
+        return 'bg-green-500/20 border-green-500 text-green-400';
     }
   };
 
-  const getAlertMessage = (system: string, severity: 'Warning' | 'Danger' | 'Critical', penalty: number): string => {
-    const increase = Math.round((penalty - 1) * 100);
-    if (system === 'Weapons') {
-      switch (severity) {
-        case 'Critical':
-          return `${system} System Critical: Cooldowns increased by ${increase}%`;
-        case 'Danger':
-          return `${system} System Error: Cooldowns increased by ${increase}%`;
-        default:
-          return `${system} Wiring Error: Cooldowns increased by ${increase}%`;
-      }
-    } else {
-      // For Power system, it still affects regeneration
-      switch (severity) {
-        case 'Critical':
-          return `${system} System Critical: Regeneration slowed by ${increase}%`;
-        case 'Danger':
-          return `${system} System Error: Regeneration slowed by ${increase}%`;
-        default:
-          return `${system} Wiring Error: Regeneration slowed by ${increase}%`;
-      }
-    }
+  const getAlertMessage = (system: string, severity: 'Base' | 'Warning' | 'Danger' | 'Critical', penalty?: number): string => {
+    return getEngineeringErrorMessage(system, severity, penalty);
   };
 
   return (
@@ -333,7 +315,7 @@ export const Weapons: React.FC = () => {
       
       {/* Alerts Section */}
       <div className="mt-4 space-y-2">
-        {weaponsAlertSeverity && (
+        {shouldShowWeaponsAlert && (
           <div className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(weaponsAlertSeverity)}`}>
             {getAlertIcon(weaponsAlertSeverity)}
             <span className="font-mono text-sm">
@@ -342,7 +324,7 @@ export const Weapons: React.FC = () => {
           </div>
         )}
         
-        {powerAlertSeverity && (
+        {shouldShowPowerAlert && (
           <div className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(powerAlertSeverity)}`}>
             {getAlertIcon(powerAlertSeverity)}
             <span className="font-mono text-sm">

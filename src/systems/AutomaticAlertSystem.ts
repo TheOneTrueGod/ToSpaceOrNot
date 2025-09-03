@@ -9,6 +9,7 @@ import {
   getPowerPenaltyMultiplier,
   getWeaponsPenaltyMultiplier,
 } from '../store/stations/engineeringStore';
+import { getEngineeringAlertTitle, getEngineeringAlertDescription, shouldHideInSummary } from '../constants/engineeringErrors';
 
 export class AutomaticAlertSystem {
   private static instance: AutomaticAlertSystem;
@@ -354,50 +355,56 @@ export class AutomaticAlertSystem {
       if (system.penalty >= 5.0) {
         // Critical: 5x multiplier (heavy penalty)
         const alertId = system.criticalId;
-        if (!this.currentAlerts.has(alertId)) {
-          const alert = this.createAlert(
-            alertId,
-            `${system.name} System Critical`,
-            `${system.name} system severely damaged. Performance reduced by ${Math.round((system.penalty - 1) * 100)}%.`,
-            'Critical',
-            currentTime
-          );
-          this.currentAlerts.set(alertId, alert);
-          alerts.push(alert);
-        } else {
-          alerts.push(this.currentAlerts.get(alertId)!);
+        if (!shouldHideInSummary(system.name, 'Critical')) {
+          if (!this.currentAlerts.has(alertId)) {
+            const alert = this.createAlert(
+              alertId,
+              getEngineeringAlertTitle(system.name, 'Critical'),
+              getEngineeringAlertDescription(system.name, 'Critical', system.penalty),
+              'Critical',
+              currentTime
+            );
+            this.currentAlerts.set(alertId, alert);
+            alerts.push(alert);
+          } else {
+            alerts.push(this.currentAlerts.get(alertId)!);
+          }
         }
       } else if (system.penalty >= 2.0) {
         // Danger: 2x multiplier (medium penalty)
         const alertId = system.dangerId;
-        if (!this.currentAlerts.has(alertId)) {
-          const alert = this.createAlert(
-            alertId,
-            `${system.name} System Error`,
-            `${system.name} system experiencing errors. Performance reduced by ${Math.round((system.penalty - 1) * 100)}%.`,
-            'Danger',
-            currentTime
-          );
-          this.currentAlerts.set(alertId, alert);
-          alerts.push(alert);
-        } else {
-          alerts.push(this.currentAlerts.get(alertId)!);
+        if (!shouldHideInSummary(system.name, 'Danger')) {
+          if (!this.currentAlerts.has(alertId)) {
+            const alert = this.createAlert(
+              alertId,
+              getEngineeringAlertTitle(system.name, 'Danger'),
+              getEngineeringAlertDescription(system.name, 'Danger', system.penalty),
+              'Danger',
+              currentTime
+            );
+            this.currentAlerts.set(alertId, alert);
+            alerts.push(alert);
+          } else {
+            alerts.push(this.currentAlerts.get(alertId)!);
+          }
         }
       } else if (system.penalty >= 1.5) {
         // Warning: 1.5x multiplier (light penalty)
         const alertId = system.warningId;
-        if (!this.currentAlerts.has(alertId)) {
-          const alert = this.createAlert(
-            alertId,
-            `${system.name} Wiring Error`,
-            `${system.name} panel has wiring errors. Performance reduced by ${Math.round((system.penalty - 1) * 100)}%.`,
-            'Warning',
-            currentTime
-          );
-          this.currentAlerts.set(alertId, alert);
-          alerts.push(alert);
-        } else {
-          alerts.push(this.currentAlerts.get(alertId)!);
+        if (!shouldHideInSummary(system.name, 'Warning')) {
+          if (!this.currentAlerts.has(alertId)) {
+            const alert = this.createAlert(
+              alertId,
+              getEngineeringAlertTitle(system.name, 'Warning'),
+              getEngineeringAlertDescription(system.name, 'Warning', system.penalty),
+              'Warning',
+              currentTime
+            );
+            this.currentAlerts.set(alertId, alert);
+            alerts.push(alert);
+          } else {
+            alerts.push(this.currentAlerts.get(alertId)!);
+          }
         }
       }
     });
