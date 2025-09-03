@@ -117,13 +117,30 @@ export const generatePanelState = (
   return connections;
 };
 
-// Panel to system mapping - hardcoded for consistency across games
-export const PANEL_SYSTEM_MAPPING: { [panelName: string]: string } = {
+// Panel to system mapping - different for each ship
+export const ALBATROSS_PANEL_MAPPING: { [panelName: string]: string } = {
   A1b2: "Weapons",
   Xy9Z: "Thrust",
   "3Fp7": "Fuel",
   Q8wS: "Power",
 };
+
+export const KESTREL_PANEL_MAPPING: { [panelName: string]: string } = {
+  A1b2: "Power",
+  Xy9Z: "Fuel",
+  "3Fp7": "Weapons",
+  Q8wS: "Thrust",
+};
+
+// Helper function to get the correct mapping for a player
+export const getPanelSystemMapping = (
+  player: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO
+): { [panelName: string]: string } => {
+  return player === Players.PLAYER_ONE ? ALBATROSS_PANEL_MAPPING : KESTREL_PANEL_MAPPING;
+};
+
+// Legacy export for backwards compatibility - defaults to PLAYER_ONE
+export const PANEL_SYSTEM_MAPPING = ALBATROSS_PANEL_MAPPING;
 
 // Penalty thresholds and multipliers
 export const PENALTY_CONFIG = {
@@ -246,8 +263,9 @@ export const getPowerPenaltyMultiplier = (
   engineeringState: EngineeringState,
   currentPlayer: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO
 ): number => {
-  const powerPanel = Object.keys(PANEL_SYSTEM_MAPPING).find(
-    (key) => PANEL_SYSTEM_MAPPING[key] === "Power"
+  const panelMapping = getPanelSystemMapping(currentPlayer);
+  const powerPanel = Object.keys(panelMapping).find(
+    (key) => panelMapping[key] === "Power"
   );
   return powerPanel
     ? getPenaltyMultiplier(powerPanel, engineeringState, currentPlayer)
@@ -258,8 +276,9 @@ export const getThrustPenaltyMultiplier = (
   engineeringState: EngineeringState,
   currentPlayer: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO
 ): number => {
-  const thrustPanel = Object.keys(PANEL_SYSTEM_MAPPING).find(
-    (key) => PANEL_SYSTEM_MAPPING[key] === "Thrust"
+  const panelMapping = getPanelSystemMapping(currentPlayer);
+  const thrustPanel = Object.keys(panelMapping).find(
+    (key) => panelMapping[key] === "Thrust"
   );
   return thrustPanel
     ? getPenaltyMultiplier(thrustPanel, engineeringState, currentPlayer)
@@ -270,8 +289,9 @@ export const getFuelPenaltyMultiplier = (
   engineeringState: EngineeringState,
   currentPlayer: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO
 ): number => {
-  const fuelPanel = Object.keys(PANEL_SYSTEM_MAPPING).find(
-    (key) => PANEL_SYSTEM_MAPPING[key] === "Fuel"
+  const panelMapping = getPanelSystemMapping(currentPlayer);
+  const fuelPanel = Object.keys(panelMapping).find(
+    (key) => panelMapping[key] === "Fuel"
   );
   return fuelPanel
     ? getPenaltyMultiplier(fuelPanel, engineeringState, currentPlayer)
@@ -282,8 +302,9 @@ export const getWeaponsPenaltyMultiplier = (
   engineeringState: EngineeringState,
   currentPlayer: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO
 ): number => {
-  const weaponsPanel = Object.keys(PANEL_SYSTEM_MAPPING).find(
-    (key) => PANEL_SYSTEM_MAPPING[key] === "Weapons"
+  const panelMapping = getPanelSystemMapping(currentPlayer);
+  const weaponsPanel = Object.keys(panelMapping).find(
+    (key) => panelMapping[key] === "Weapons"
   );
   return weaponsPanel
     ? getPenaltyMultiplier(weaponsPanel, engineeringState, currentPlayer)
