@@ -21,7 +21,7 @@ export const NavigationSchematics: React.FC = () => {
   return (
     <div className="bg-yellow-100 p-4 rounded-lg border-2 border-yellow-600 h-full flex flex-col">
       <h3 className="text-sm font-mono text-gray-800 mb-2 text-center font-bold">
-        {otherPlayerName}'s Schematic
+        {otherPlayerName}'s Targets
       </h3>
       
       <div className="flex flex-col justify-evenly flex-1 space-y-2">

@@ -68,7 +68,7 @@ export const MainScreen: React.FC = () => {
           >
             {viewingSchematic 
               ? "Back to Navigation Controls" 
-              : `View ${currentPlayer === Players.PLAYER_ONE ? "Kestrel" : "Albatross"}'s Schematic`}
+              : `View ${currentPlayer === Players.PLAYER_ONE ? "Kestrel" : "Albatross"}'s Targets`}
           </button>
         </div>
 
