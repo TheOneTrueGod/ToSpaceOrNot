@@ -19,6 +19,7 @@ import { Players } from '../types';
 import { StationTitle } from '../components/StationTitle';
 import { AlertOctagon } from 'lucide-react';
 import { WEAPONS_CANVAS_WIDTH, WEAPONS_CANVAS_HEIGHT } from '../constants/weaponsCanvas';
+import { AnimatedProgressBar } from '../components/AnimatedProgressBar';
 
 const CANVAS_WIDTH = WEAPONS_CANVAS_WIDTH;
 const CANVAS_HEIGHT = WEAPONS_CANVAS_HEIGHT;
@@ -281,6 +282,19 @@ export const Weapons: React.FC = () => {
             </div>
           );
         })}
+      </div>
+      
+      {/* Power Level Progress Bar */}
+      <div className="mt-4 px-8">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-gray-400 text-sm font-mono">Battery Power</span>
+          <span className="text-sky-400 text-sm font-mono">{batteryPower.current}/{batteryPower.max}</span>
+        </div>
+        <AnimatedProgressBar
+          percent={(batteryPower.current / batteryPower.max) * 100}
+          colour="bg-blue-500"
+          animateColour="bg-cyan-400"
+        />
       </div>
       
       {/* Alerts Section */}
