@@ -289,9 +289,10 @@ export const getThrustPenaltyMultiplier = (
   const thrustPanel = Object.keys(panelMapping).find(
     (key) => panelMapping[key] === "Thrust"
   );
-  return thrustPanel
+  const multiplier = thrustPanel
     ? getPenaltyMultiplier(thrustPanel, engineeringState, currentPlayer)
     : 1;
+	return multiplier === 0.5 ? 0.75 : multiplier;
 };
 
 export const getFuelPenaltyMultiplier = (

@@ -4,8 +4,6 @@ import { RootState } from "../store";
 import { setActiveStation } from "../store/stationStore";
 import { StationType } from "../types";
 import { Engineering } from "../stations/Engineering";
-import { Weapons } from "../stations/Weapons";
-import { Navigation } from "../stations/Navigation";
 import { Science } from "../stations/Science";
 import { MainScreen } from "../stations/MainScreen";
 
@@ -122,10 +120,6 @@ const StationContent: React.FC<{ station: StationType }> = ({ station }) => {
   switch (station) {
     case "Engineering":
       return <Engineering />;
-    case "Weapons":
-      return <Weapons />;
-    case "Navigation":
-      return <Navigation />;
     case "Science":
       return <Science />;
     case "Main Screen":

@@ -45,7 +45,7 @@ export class DungeonMaster {
       return 0;
     }
 
-    let speed = 1.5; // Base speed
+    let speed = 1; // Base speed
 
     // Check navigation alignment - need current player to determine correct values
     const currentPlayer = state.game?.currentPlayer || Players.PLAYER_ONE;
@@ -53,12 +53,10 @@ export class DungeonMaster {
       navigationState,
       currentPlayer
     );
-    if (navErrors === 1) {
-      speed -= 0.5; // One navigation number incorrect
-    } else if (navErrors >= 2) {
-      speed -= 1; // Two or more navigation numbers incorrect
-    } else if (navErrors >= 3) {
-      speed -= 1.5;
+    if (navErrors >= 2) {
+      speed *= 0; // One navigation number incorrect
+    } else if (navErrors >= 1) {
+      speed *= 0.5; // Two or more navigation numbers incorrect
     }
 
     // Apply engineering thrust penalty
@@ -174,24 +172,44 @@ export class DungeonMaster {
           currentShipState.distanceToDestination.max -
           currentShipState.distanceToDestination.current;
 
-        store.dispatch(
-          updateSystemValue({
-            system: "distanceToDestination",
-            value: -speed, // Negative to decrease distance to destination
-            isCurrentValue: true,
-          })
-        );
+        // Calculate the intended new distance traveled
+        let newDistanceTraveled = distanceTraveled + speed;
+        let actualSpeed = speed;
 
-        // Check if we've reached a break point
-        const newDistanceTraveled = distanceTraveled + speed;
+        // Check if we would pass a break point and limit movement to that threshold
         for (const breakPoint of BREAK_POINTS) {
           if (
             distanceTraveled < breakPoint &&
             newDistanceTraveled >= breakPoint
           ) {
+            // Limit movement to exactly the break point
+            newDistanceTraveled = breakPoint;
+            actualSpeed = breakPoint - distanceTraveled;
+            
+            // Update distance to exactly the break point
+            store.dispatch(
+              updateSystemValue({
+                system: "distanceToDestination",
+                value: -actualSpeed, // Negative to decrease distance to destination
+                isCurrentValue: true,
+              })
+            );
+            
+            // Start the break
             store.dispatch(startBreak());
             break;
           }
+        }
+
+        // If we didn't hit a break point, apply normal movement
+        if (!store.getState().ship.isOnBreak) {
+          store.dispatch(
+            updateSystemValue({
+              system: "distanceToDestination",
+              value: -speed, // Negative to decrease distance to destination
+              isCurrentValue: true,
+            })
+          );
         }
 
         // Update navigation stage based on distance traveled
