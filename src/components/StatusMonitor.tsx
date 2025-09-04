@@ -9,11 +9,11 @@ import {
   AlertCircle,
   XCircle,
   CheckCircle,
-  AlertOctagon,
 } from "lucide-react";
 import { disasterEventBus } from "../systems/DisasterEventBus";
 import { getEngineeringAlerts } from "../constants/engineeringErrors";
 import { getSystemPenalties } from "../utils/engineeringPenalties";
+import { Alert } from "./Alert";
 
 // Constants for asteroid rendering
 const ASTEROID_MIN_SIZE = 10;
@@ -129,36 +129,6 @@ export const StatusMonitor: React.FC = () => {
     }
   };
 
-  // Engineering alert specific functions
-  const getEngineeringAlertColor = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical') => {
-    switch (severity) {
-      case 'Critical':
-        return 'text-red-400 bg-red-900/20 border-red-500';
-      case 'Danger':
-        return 'text-orange-400 bg-orange-900/20 border-orange-500';
-      case 'Warning':
-        return 'text-yellow-400 bg-yellow-900/20 border-yellow-500';
-      case 'Base':
-        return 'text-green-400 bg-green-900/20 border-green-500';
-      default:
-        return 'text-gray-400 bg-gray-900/20 border-gray-500';
-    }
-  };
-
-  const getEngineeringAlertIcon = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical') => {
-    switch (severity) {
-      case 'Critical':
-        return <AlertOctagon size={16} className="text-red-400" />;
-      case 'Danger':
-        return <AlertTriangle size={16} className="text-orange-400" />;
-      case 'Warning':
-        return <AlertCircle size={16} className="text-yellow-400" />;
-      case 'Base':
-        return <CheckCircle size={16} className="text-green-400" />;
-      default:
-        return <AlertCircle size={16} className="text-gray-400" />;
-    }
-  };
 
   // Get engineering alerts for status monitor
   const systemPenalties = getSystemPenalties(engineeringState, gameState.currentPlayer || 'Albatross');
@@ -424,16 +394,12 @@ export const StatusMonitor: React.FC = () => {
           <div className="text-xs text-gray-400 font-mono mb-2 uppercase tracking-wide">Engineering Status</div>
           <div className="grid grid-cols-2 gap-2">
             {engineeringAlerts.slice(0, 8).map((alert, index) => (
-              <div
+              <Alert
                 key={`${alert.system}-${alert.severity}-${index}`}
-                className={`p-2 rounded border ${getEngineeringAlertColor(alert.severity)}`}
-              >
-                <div className="flex items-center space-x-2">
-                  {getEngineeringAlertIcon(alert.severity)}
-                  <div className="font-semibold text-xs">{alert.system}</div>
-                </div>
-                <div className="text-xs mt-1 opacity-75">{alert.message}</div>
-              </div>
+                title={alert.title}
+                severity={alert.displaySeverity}
+                variant="compact"
+              />
             ))}
           </div>
         </div>

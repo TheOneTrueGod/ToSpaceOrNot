@@ -17,7 +17,7 @@ export interface Alert {
 	name: string;
 	timestamp: { minutes: number; seconds: number };
 	description: string;
-	severity: 'Warning' | 'Danger' | 'Critical' | 'Success';
+	severity: 'Normal' | 'Warning' | 'Danger' | 'Critical' | 'Success';
 	owner: Player;
 	systemEffects: SystemEffect[];
 	isActive: boolean;

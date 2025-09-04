@@ -7,6 +7,7 @@ interface WireConnection {
 }
 
 export type RewireSource = "user" | "minor" | "major" | "catastrophic";
+export type EngineeringSystems = 'Power' | 'Thrust' | 'Weapons' | 'Fuel';
 
 interface PanelState {
   connections: WireConnection[];
@@ -119,14 +120,14 @@ export const generatePanelState = (
 };
 
 // Panel to system mapping - different for each ship
-export const ALBATROSS_PANEL_MAPPING: { [panelName: string]: string } = {
+export const ALBATROSS_PANEL_MAPPING: { [panelName: string]: EngineeringSystems } = {
   A1b2: "Weapons",
   Xy9Z: "Thrust",
   "3Fp7": "Fuel",
   Q8wS: "Power",
 };
 
-export const KESTREL_PANEL_MAPPING: { [panelName: string]: string } = {
+export const KESTREL_PANEL_MAPPING: { [panelName: string]: EngineeringSystems } = {
   A1b2: "Power",
   Xy9Z: "Fuel",
   "3Fp7": "Weapons",
@@ -145,12 +146,14 @@ export const PANEL_SYSTEM_MAPPING = ALBATROSS_PANEL_MAPPING;
 
 // Penalty thresholds and multipliers
 export const PENALTY_CONFIG = {
+	NO_PENALTY_THRESHOLD: 0,
   LIGHT_THRESHOLD: 1,
   MEDIUM_THRESHOLD: 3,
   HEAVY_THRESHOLD: 5,
-  LIGHT_MULTIPLIER: 1.5,
-  MEDIUM_MULTIPLIER: 2,
-  HEAVY_MULTIPLIER: 5,
+	NO_PENALTY_MULTIPLIER: 0.5,
+  LIGHT_MULTIPLIER: 1,
+  MEDIUM_MULTIPLIER: 1.5,
+  HEAVY_MULTIPLIER: 4,
 };
 
 export const generateEngineeringState = (
@@ -260,7 +263,7 @@ export const getPenaltyMultiplier = (
     case "heavy":
       return PENALTY_CONFIG.HEAVY_MULTIPLIER;
     default:
-      return 1;
+      return PENALTY_CONFIG.NO_PENALTY_MULTIPLIER;
   }
 };
 

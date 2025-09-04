@@ -26,7 +26,7 @@ import { getSystemPenalties } from "../utils/engineeringPenalties";
 import { updateSystemValue } from "../store/shipStore";
 import { ButtonWithProgressBar } from "../components/ButtonWithProgressBar";
 import { StationTitle } from "../components/StationTitle";
-import { AlertTriangle, AlertCircle, AlertOctagon, CheckCircle } from 'lucide-react';
+import { Alert } from '../components/Alert';
 
 const PulseButton: React.FC = () => {
   const dispatch = useDispatch();
@@ -51,7 +51,7 @@ const PulseButton: React.FC = () => {
         clearInterval(pulseIntervalRef.current);
       }
     };
-  }, [scienceState.pulseFrequency.current]);
+  }, [scienceState.pulseFrequency]);
 
   const handleClick = () => {
     dispatch(recordPulseClick(Date.now()));
@@ -165,31 +165,6 @@ const FuelMixingGame: React.FC = () => {
     'station'
   );
 
-  const getAlertIcon = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical') => {
-    switch (severity) {
-      case 'Critical':
-        return <AlertOctagon className="w-5 h-5" />;
-      case 'Danger':
-        return <AlertTriangle className="w-5 h-5" />;
-      case 'Warning':
-        return <AlertCircle className="w-5 h-5" />;
-      default: // Base
-        return <CheckCircle className="w-5 h-5" />;
-    }
-  };
-
-  const getAlertColor = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical') => {
-    switch (severity) {
-      case 'Critical':
-        return 'bg-red-500/20 border-red-500 text-red-400';
-      case 'Danger':
-        return 'bg-orange-500/20 border-orange-500 text-orange-400';
-      case 'Warning':
-        return 'bg-yellow-500/20 border-yellow-500 text-yellow-400';
-      default: // Base
-        return 'bg-green-500/20 border-green-500 text-green-400';
-    }
-  };
 
   // Calculate distance traveled and required mixture length
   const distanceTraveled =
@@ -483,7 +458,7 @@ const FuelMixingGame: React.FC = () => {
           <h3 className="text-sm font-mono text-gray-400 mb-2 text-center">
             {currentPlayer === Players.PLAYER_ONE ? "Kestrel's" : "Albatross's"} Target
           </h3>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-center">
             <div>
               <TestTubeComponent
                 layers={correctMixture}
@@ -498,7 +473,7 @@ const FuelMixingGame: React.FC = () => {
                 maxLayers={requiredMixtureLength}
                 isActive={false}
                 label="Previous"
-                scale={0.5}
+                scale={0.9}
               />
             </div>
           </div>
@@ -516,12 +491,12 @@ const FuelMixingGame: React.FC = () => {
       {/* Alerts Section */}
       <div className="mt-4 space-y-2">
         {engineeringAlerts.map((alert, index) => (
-          <div key={`${alert.system}-${alert.severity}-${index}`} className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(alert.severity)}`}>
-            {getAlertIcon(alert.severity)}
-            <span className="font-mono text-sm">
-              {alert.message}
-            </span>
-          </div>
+          <Alert
+            key={`${alert.system}-${alert.severity}-${index}`}
+            title={alert.message}
+            severity={alert.displaySeverity}
+            variant="full"
+          />
         ))}
       </div>
     </div>

@@ -1,8 +1,8 @@
-import { EngineeringState, getWeaponsPenaltyMultiplier, getFuelPenaltyMultiplier, getPowerPenaltyMultiplier, getThrustPenaltyMultiplier } from '../store/stations/engineeringStore';
+import { EngineeringState, getWeaponsPenaltyMultiplier, getFuelPenaltyMultiplier, getPowerPenaltyMultiplier, getThrustPenaltyMultiplier, EngineeringSystems } from '../store/stations/engineeringStore';
 import { Players } from '../types';
 
 export interface SystemPenalty {
-  name: string;
+  name: EngineeringSystems;
   penalty: number;
 }
 

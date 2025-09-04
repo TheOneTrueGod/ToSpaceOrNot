@@ -47,16 +47,13 @@ const FUEL_TYPES: FuelType[] = ['Hydrogen', 'Xenon', 'Plutonium', 'Helium'];
 const CORRECT_PULSE_FREQUENCY = 1000;
 const PULSE_FREQUENCY_TOLERANCE = 100;
 export const FUEL_ADDED_PER_CORRECT_MIXTURE = 100;
-export const REFUEL_COOLDOWN_NO_PENALTY_SECONDS = 10
-export const REFUEL_COOLDOWN_SECONDS = 20;
+
 
 export const FUEL_TARGET_TIMEOUT = 30
 
-export const DUMP_COOLDOWN_NO_PENALTY_SECONDS = 2
-export const DUMP_COOLDOWN_SECONDS = 3;
-
-export const DUMP_ALL_COOLDOWN_NO_PENALTY_SECONDS = 20;
-export const DUMP_ALL_COOLDOWN_SECONDS = 20;
+export const REFUEL_COOLDOWN_SECONDS = 30;
+export const DUMP_COOLDOWN_SECONDS = 4;
+export const DUMP_ALL_COOLDOWN_SECONDS = 30;
 
 export const PULSE_FREQUENCY_ENABLED = false;
 
@@ -79,11 +76,11 @@ export const getMixtureLength = (distanceTraveled: number): number => {
 // Helper function to calculate actual cooldown with engineering penalty
 // This is now a pure function that takes the penalty as a parameter
 export const getFuelCooldowns = (fuelPenalty: number = 1): { 'refuel': number, 'dump': number, 'dumpAll': number } => {
-	const adjustedRefuelCooldown = fuelPenalty > 1 ? Math.round(REFUEL_COOLDOWN_NO_PENALTY_SECONDS * fuelPenalty) : REFUEL_COOLDOWN_SECONDS;
-	const adjustedDumpCooldown = fuelPenalty > 1 ? Math.round(DUMP_COOLDOWN_NO_PENALTY_SECONDS * fuelPenalty) : DUMP_COOLDOWN_SECONDS;
-	const adjustedDumpAllCooldown = fuelPenalty > 1 ? Math.round(DUMP_ALL_COOLDOWN_NO_PENALTY_SECONDS * fuelPenalty) : DUMP_ALL_COOLDOWN_SECONDS;
+	const adjustedRefuelCooldown = REFUEL_COOLDOWN_SECONDS * fuelPenalty;
+	const adjustedDumpCooldown = DUMP_COOLDOWN_SECONDS * fuelPenalty;
+	const adjustedDumpAllCooldown = DUMP_ALL_COOLDOWN_SECONDS * fuelPenalty;
 
-	const fuelValues =  { 'refuel': adjustedRefuelCooldown, 'dump': adjustedDumpCooldown, 'dumpAll': adjustedDumpAllCooldown }
+	const fuelValues = { 'refuel': adjustedRefuelCooldown, 'dump': adjustedDumpCooldown, 'dumpAll': adjustedDumpAllCooldown }
 	return fuelValues;
 };
 

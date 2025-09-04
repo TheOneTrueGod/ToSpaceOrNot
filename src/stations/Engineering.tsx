@@ -615,7 +615,7 @@ export const Engineering: React.FC = () => {
 		<div className='bg-gray-800 p-6 h-full'>
 			<StationTitle>
 				Engineering Station{engineeringState.isViewingSchematic ?
-					(<h4 className="text-base">	{` ${otherPlayer}'s Schematic`}</h4>) :<div className="h-[24px]" />}
+					(<div className="text-base">	{` ${otherPlayer}'s Schematic`}</div>) :<div className="h-[24px]" />}
 			</StationTitle>
 			<div className={`flex mb-4 ${engineeringState.isViewingSchematic ? 'justify-start' : 'justify-end'}`}>
 				<button

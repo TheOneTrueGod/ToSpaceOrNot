@@ -15,7 +15,7 @@ import { getWeaponsPenaltyMultiplier } from '../../store/stations/engineeringSto
 import { getEngineeringAlerts } from '../../constants/engineeringErrors';
 import { getSystemPenalties } from '../../utils/engineeringPenalties';
 import { Players } from '../../types';
-import { AlertTriangle, AlertCircle, AlertOctagon, CheckCircle } from 'lucide-react';
+import { Alert } from '../../components/Alert';
 import { WEAPONS_CANVAS_WIDTH, WEAPONS_CANVAS_HEIGHT } from '../../constants/weaponsCanvas';
 
 const CANVAS_WIDTH = WEAPONS_CANVAS_WIDTH;
@@ -72,7 +72,7 @@ export const WeaponsConsole: React.FC = () => {
         system: 'batteryPower', 
         value: -basePowerCost 
       }));
-      dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 3, currentGameSeconds: nowSeconds, engineeringPenalty: weaponsPenalty }));
+      dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 4, currentGameSeconds: nowSeconds, engineeringPenalty: weaponsPenalty }));
       return;
     }
 
@@ -89,7 +89,7 @@ export const WeaponsConsole: React.FC = () => {
         dispatch(popAsteroidLayer({ asteroidId: target.id }));
       });
       // Note: nowSeconds + 1 because the animation takes ~200ms which is less than 1 game second
-      dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 3, currentGameSeconds: nowSeconds + 1, engineeringPenalty: weaponsPenalty }));
+      dispatch(setWeaponCooldown({ weapon, cooldownSeconds: 4, currentGameSeconds: nowSeconds + 1, engineeringPenalty: weaponsPenalty }));
     }, 200);
   };
 
@@ -213,31 +213,6 @@ export const WeaponsConsole: React.FC = () => {
 
   const powerLow = batteryPower.current < 5; // Minimum weapon power requirement
 
-  const getAlertIcon = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical') => {
-    switch (severity) {
-      case 'Critical':
-        return <AlertOctagon className="w-5 h-5" />;
-      case 'Danger':
-        return <AlertTriangle className="w-5 h-5" />;
-      case 'Warning':
-        return <AlertCircle className="w-5 h-5" />;
-      default: // Base
-        return <CheckCircle className="w-5 h-5" />;
-    }
-  };
-
-  const getAlertColor = (severity: 'Base' | 'Warning' | 'Danger' | 'Critical') => {
-    switch (severity) {
-      case 'Critical':
-        return 'bg-red-500/20 border-red-500 text-red-400';
-      case 'Danger':
-        return 'bg-orange-500/20 border-orange-500 text-orange-400';
-      case 'Warning':
-        return 'bg-yellow-500/20 border-yellow-500 text-yellow-400';
-      default: // Base
-        return 'bg-green-500/20 border-green-500 text-green-400';
-    }
-  };
 
   return (
     <div className="w-full">
@@ -309,21 +284,20 @@ export const WeaponsConsole: React.FC = () => {
       {/* Alerts Section */}
       <div className="mt-4 space-y-2">
         {engineeringAlerts.map((alert, index) => (
-          <div key={`${alert.system}-${alert.severity}-${index}`} className={`flex items-center gap-2 px-3 py-2 rounded border ${getAlertColor(alert.severity)}`}>
-            {getAlertIcon(alert.severity)}
-            <span className="font-mono text-sm">
-              {alert.message}
-            </span>
-          </div>
+          <Alert
+            key={`${alert.system}-${alert.severity}-${index}`}
+            title={alert.message}
+            severity={alert.displaySeverity}
+            variant="full"
+          />
         ))}
         
         {powerLow && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded border bg-red-500/20 border-red-500 text-red-400">
-            <AlertOctagon className="w-5 h-5" />
-            <span className="font-mono text-sm">
-              Power Low: Unable to fire weapons
-            </span>
-          </div>
+          <Alert
+            title="Power Low: Unable to fire weapons"
+            severity="critical"
+            variant="full"
+          />
         )}
       </div>
     </div>
