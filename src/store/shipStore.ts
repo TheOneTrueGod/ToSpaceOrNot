@@ -184,7 +184,7 @@ const shipSlice = createSlice({
 
 // Helper function to calculate power restoration per second
 const calculatePowerRestoration = (engineeringPenalty: number = 1, scienceCorrect: boolean = true): number => {
-  const baselineRecovery = 5;
+  const baselineRecovery = 3;
 
   // Start with baseline recovery
   let powerRestoration = baselineRecovery;

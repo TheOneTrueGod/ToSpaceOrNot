@@ -387,6 +387,50 @@ export const engineeringSlice = createSlice({
       });
       state.isViewingSchematic = false;
     },
+    cutRandomCablesAtStart: (state, action: PayloadAction<{player: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO, cablesPerPanel: number}>) => {
+      const { cablesPerPanel } = action.payload;
+      
+      // Get all panels with connections
+      const panelsWithConnections = PANEL_NAMES.filter((panelName) => {
+        const panel = state.panels[panelName];
+        return panel && panel.connections.length > 0;
+      });
+
+      if (panelsWithConnections.length === 0) {
+        console.log(`🛡️ No panels available for cable cutting at start - no connections to cut`);
+        return;
+      }
+
+      const affectedPanels: string[] = [];
+      let totalCablesCut = 0;
+
+      // Cut exactly cablesPerPanel cables from each panel
+      panelsWithConnections.forEach(panelName => {
+        const panel = state.panels[panelName];
+        if (!panel || panel.connections.length === 0) return;
+
+        // Determine how many cables to cut from this panel
+        const cablesToCut = Math.min(cablesPerPanel, panel.connections.length);
+        
+        // Get random indices to cut
+        const indicesToCut = [...Array(panel.connections.length).keys()]
+          .sort(() => Math.random() - 0.5)
+          .slice(0, cablesToCut)
+          .sort((a, b) => b - a); // Sort descending to avoid index shifting issues
+
+        // Cut the connections
+        const newConnections = [...panel.connections];
+        indicesToCut.forEach(index => {
+          newConnections.splice(index, 1);
+        });
+
+        state.panels[panelName].connections = newConnections;
+        totalCablesCut += cablesToCut;
+        affectedPanels.push(panelName);
+      });
+
+      console.log(`⚡ Cut ${cablesPerPanel} cables from each of ${affectedPanels.length} panels (${totalCablesCut} total): ${affectedPanels.join(', ')}`);
+    },
   },
 });
 
@@ -395,5 +439,6 @@ export const {
   resetEngineering,
   toggleSchematicView,
   initializeForPlayer,
+  cutRandomCablesAtStart,
 } = engineeringSlice.actions;
 export default engineeringSlice.reducer;

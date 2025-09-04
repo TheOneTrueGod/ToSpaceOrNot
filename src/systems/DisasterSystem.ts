@@ -121,6 +121,64 @@ export class DisasterEvents {
     return false;
   }
 
+  // Cut exactly N cables from each available panel for the current player
+  static cutCables(cablesPerPanel: number, source: RewireSource = "minor"): string[] {
+    const state = store.getState();
+    const engineering = state.engineering;
+    const currentPlayer = state.game?.currentPlayer || Players.PLAYER_ONE;
+    const affectedPanels: string[] = [];
+
+    // Get all panels with connections that can be affected
+    const panelsWithConnections = Object.keys(engineering.panels).filter((panel) => {
+      const currentPanel = engineering.panels[panel];
+      return currentPanel && currentPanel.connections.length > 0 && 
+             DisasterEvents.canRewirePanel(currentPanel, source);
+    });
+
+    if (panelsWithConnections.length === 0) {
+      console.log(`🛡️ No panels available for cable cutting - no connections to cut`);
+      return [];
+    }
+
+    let totalCablesCut = 0;
+
+    // Cut exactly cablesPerPanel cables from each panel
+    panelsWithConnections.forEach(panelName => {
+      const panel = engineering.panels[panelName];
+      if (!panel || panel.connections.length === 0) return;
+
+      // Determine how many cables to cut from this panel
+      const cablesToCut = Math.min(cablesPerPanel, panel.connections.length);
+      
+      // Get random indices to cut
+      const indicesToCut = [...Array(panel.connections.length).keys()]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, cablesToCut)
+        .sort((a, b) => b - a); // Sort descending to avoid index shifting issues
+
+      // Cut the connections
+      const newConnections = [...panel.connections];
+      indicesToCut.forEach(index => {
+        newConnections.splice(index, 1);
+      });
+
+      store.dispatch(
+        updatePanelConnections({
+          panelName,
+          connections: newConnections,
+          source,
+          currentPlayer,
+        })
+      );
+
+      totalCablesCut += cablesToCut;
+      affectedPanels.push(panelName);
+    });
+
+    console.log(`⚡ Cut ${cablesPerPanel} cables from each of ${affectedPanels.length} panels (${totalCablesCut} total): ${affectedPanels.join(', ')}`);
+    return affectedPanels;
+  }
+
   // Perform engineering rewire on a panel with source tracking
   static engineeringRewire(panelName?: string, source: RewireSource = "minor") {
     const state = store.getState();
@@ -252,7 +310,8 @@ export const DISASTER_TYPES: Record<string, DisasterType> = {
     name: "Minor Engineering Rewire",
     severity: "minor",
     execute: () => {
-      DisasterEvents.engineeringRewire(undefined, "minor");
+      // Always cut exactly 2 cables for light engineering disaster
+      DisasterEvents.cutCables(2, "minor");
     },
   },
 

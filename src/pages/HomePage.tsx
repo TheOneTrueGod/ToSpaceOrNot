@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { setCurrentPlayer, setCurrentPage } from "../store/gameStore";
 import { resetNavigation } from "../store/stations/navigationStore";
-import { initializeForPlayer } from "../store/stations/engineeringStore";
+import { initializeForPlayer, cutRandomCablesAtStart } from "../store/stations/engineeringStore";
 import { RocketAnimation } from "../components/RocketAnimation";
 import { Player, Players } from "../types";
 
@@ -16,6 +16,8 @@ export const HomePage: React.FC = () => {
     dispatch(setCurrentPlayer(player));
     dispatch(resetNavigation({ player }));
     dispatch(initializeForPlayer(player));
+    // Cut exactly 2 random cables from each panel at game start
+    dispatch(cutRandomCablesAtStart({ player, cablesPerPanel: 2 }));
   };
 
   const handleStart = () => {
