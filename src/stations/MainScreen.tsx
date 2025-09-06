@@ -88,7 +88,7 @@ export const MainScreen: React.FC = () => {
 									<p>Wait for your partner to reach this checkpoint.</p>
 								</div>
 								<div className="text-gray-300 font-mono text-sm">
-									<p>Use this time to make repairs and prepare for the next leg.</p>
+									<p>Use this time to prepare for the next leg of the journey.</p>
 									<p>When both of you have reached this checkpoint, ensure correct navigation values and resume the journey together!</p>
 								</div>
 							</div>

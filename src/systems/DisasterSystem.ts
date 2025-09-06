@@ -538,44 +538,32 @@ interface DisasterWeight {
 export const QUADRANT_DISASTER_WEIGHTS: Record<Quadrant, DisasterWeight[]> = {
   [Quadrant.Alpha]: [
     // Mostly minor disasters in Alpha Quadrant
-    { disasterId: "NAV_MISALIGN", weight: 3 },
     { disasterId: "SINGLE_ASTEROID", weight: 5 },
-    //{ disasterId: "POWER_SURGE", weight: 3 },
-    { disasterId: "MINOR_REWIRE", weight: 30 },
     // Very rare major disaster
     { disasterId: "MAJOR_ASTEROID", weight: 1 },
   ],
   [Quadrant.Beta]: [
     // Mix of minor and major disasters in Beta Quadrant
-    { disasterId: "NAV_MISALIGN", weight: 2 },
     { disasterId: "SINGLE_ASTEROID", weight: 3 },
     //{ disasterId: "POWER_SURGE", weight: 2 },
     { disasterId: "MINOR_REWIRE", weight: 15 },
     { disasterId: "MAJOR_ASTEROID", weight: 5 },
     { disasterId: "MAJOR_REWIRE", weight: 4 },
-    // Very rare catastrophic
-    { disasterId: "THREE_MINORS", weight: 1 },
   ],
   [Quadrant.Gamma]: [
     // Mostly major and catastrophic disasters in Gamma Quadrant
-    { disasterId: "NAV_MISALIGN", weight: 1 },
-    { disasterId: "SINGLE_ASTEROID", weight: 2 },
-    { disasterId: "MINOR_REWIRE", weight: 5 },
     { disasterId: "MAJOR_ASTEROID", weight: 6 },
     { disasterId: "MAJOR_REWIRE", weight: 5 },
     { disasterId: "CATASTROPHIC_REWIRE", weight: 2 },
-    { disasterId: "THREE_MINORS", weight: 3 },
     { disasterId: "ASTEROID_CLUSTER", weight: 4 },
     { disasterId: "SABOTAGE", weight: 2 },
   ],
   [Quadrant.Delta]: [
     // Predominantly catastrophic disasters in Delta Quadrant
-		{ disasterId: "SINGLE_ASTEROID", weight: 2 },
-    { disasterId: "MINOR_REWIRE", weight: 1 },
+		{ disasterId: "SINGLE_ASTEROID", weight: 4 },
     { disasterId: "MAJOR_ASTEROID", weight: 4 },
     { disasterId: "MAJOR_REWIRE", weight: 4 },
     { disasterId: "CATASTROPHIC_REWIRE", weight: 6 },
-    { disasterId: "THREE_MINORS", weight: 5 },
     { disasterId: "ASTEROID_CLUSTER", weight: 7 },
     { disasterId: "SABOTAGE", weight: 5 },
   ],

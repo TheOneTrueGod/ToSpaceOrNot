@@ -271,9 +271,9 @@ export const StatusMonitor: React.FC = () => {
 
         {/* Break overlay */}
         {shipState.isOnBreak && (
-          <div className="absolute top-0 left-0 bg-green-500 bg-opacity-20 border-2 border-green-400 rounded px-3 py-1">
-            <span className="text-green-400 font-mono text-sm font-semibold">
-              Waiting for Navigation Sync
+          <div className="absolute top-0 left-0 bottom-0 right-0 bg-green-500 bg-opacity-20 border-2 border-green-400 rounded px-3 py-1 flex justify-center items-center">
+            <span className="text-green-400 font-mono text-xl font-semibold text-center">
+              Safe Zone<br/>Waiting for Navigation Sync
             </span>
           </div>
         )}

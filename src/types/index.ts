@@ -65,10 +65,10 @@ export enum Quadrant {
 
 // Quadrant distance boundaries
 export const QUADRANT_BOUNDARIES = {
-	[Quadrant.Alpha]: { min: 0, max: 250 },
-	[Quadrant.Beta]: { min: 250, max: 500 },
-	[Quadrant.Gamma]: { min: 500, max: 750 },
-	[Quadrant.Delta]: { min: 750, max: 1000 }
+	[Quadrant.Alpha]: { min: 0, max: 150 },
+	[Quadrant.Beta]: { min: 150, max: 400 },
+	[Quadrant.Gamma]: { min: 400, max: 700 },
+	[Quadrant.Delta]: { min: 700, max: 1000 }
 } as const;
 
 // Helper function to get current quadrant based on distance traveled

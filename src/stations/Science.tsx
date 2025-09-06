@@ -506,7 +506,7 @@ const FuelMixingGame: React.FC = () => {
 export const Science: React.FC = () => {
   return (
     <div className="w-full max-w-4xl mx-auto p-6 bg-gray-800 rounded-lg">
-      <StationTitle>Science Station - Reactor Control</StationTitle>
+      <StationTitle>Science Station - Fuel Mixing</StationTitle>
 
       <div className="space-y-8">
         <div className="bg-gray-700 p-6 rounded-lg">
