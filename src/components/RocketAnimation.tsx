@@ -5,13 +5,15 @@ interface RocketAnimationProps {
   size?: 'small' | 'large';
   showTrail?: boolean;
   disasterAnimation?: 'slide' | 'shake' | null;
+  hasFuel?: boolean;
 }
 
 export const RocketAnimation: React.FC<RocketAnimationProps> = ({ 
   canvasRef,
   size = 'large', 
   showTrail = true,
-  disasterAnimation = null
+  disasterAnimation = null,
+  hasFuel = true
 }) => {
   const animationRef = useRef<number>();
   const particles = useRef<Array<{ x: number; y: number; vx: number; vy: number; life: number; color: string }>>([]);
@@ -30,7 +32,7 @@ export const RocketAnimation: React.FC<RocketAnimationProps> = ({
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       time += 0.02;
-      const tilt = Math.sin(time) * 0.35; // 20 degrees in radians
+      const tilt = hasFuel ? Math.sin(time) * 0.35 : 0; // Only rock when has fuel
       
       // Handle disaster animation trigger
       if (disasterAnimation && !disasterAnimationRef.current) {
@@ -137,7 +139,7 @@ export const RocketAnimation: React.FC<RocketAnimationProps> = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [size, showTrail]);
+  }, [size, showTrail, hasFuel]);
 
   return null;
 };

@@ -255,7 +255,8 @@ export const StatusMonitor: React.FC = () => {
         <RocketAnimation
           canvasRef={rocketCanvasRef}
           size="small"
-          showTrail={true}
+          showTrail={shipState.fuelLevels.current > 0}
+          hasFuel={shipState.fuelLevels.current > 0}
           disasterAnimation={disasterAnimation}
         />
 

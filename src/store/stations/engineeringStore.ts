@@ -388,7 +388,7 @@ export const engineeringSlice = createSlice({
       state.isViewingSchematic = false;
     },
     cutRandomCablesAtStart: (state, action: PayloadAction<{player: typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO, cablesPerPanel: number}>) => {
-      const { cablesPerPanel } = action.payload;
+      const { player, cablesPerPanel } = action.payload;
       
       // Get all panels with connections
       const panelsWithConnections = PANEL_NAMES.filter((panelName) => {
@@ -424,12 +424,22 @@ export const engineeringSlice = createSlice({
           newConnections.splice(index, 1);
         });
 
-        state.panels[panelName].connections = newConnections;
+        // Use updatePanelConnections to properly track the source as "minor" (light disaster)
+        engineeringSlice.caseReducers.updatePanelConnections(state, {
+          type: 'engineering/updatePanelConnections',
+          payload: {
+            panelName,
+            connections: newConnections,
+            source: 'minor' as RewireSource,
+            currentPlayer: player
+          }
+        });
+
         totalCablesCut += cablesToCut;
         affectedPanels.push(panelName);
       });
 
-      console.log(`⚡ Cut ${cablesPerPanel} cables from each of ${affectedPanels.length} panels (${totalCablesCut} total): ${affectedPanels.join(', ')}`);
+      console.log(`⚡ Cut ${cablesPerPanel} cables from each of ${affectedPanels.length} panels (${totalCablesCut} total) as light disaster: ${affectedPanels.join(', ')}`);
     },
   },
 });
