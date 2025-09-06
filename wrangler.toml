@@ -1,4 +1,4 @@
-name = "spacebound"
+name = "website"
 main = "src/wrangler.js"
 compatibility_date = "2023-12-01"
 
