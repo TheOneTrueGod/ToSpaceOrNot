@@ -49,7 +49,7 @@ export class DungeonMaster {
 
     // Check navigation alignment - need current player to determine correct values
     const currentPlayer = state.game?.currentPlayer || Players.PLAYER_ONE;
-    const navErrors = this.countNavigationErrors(
+    /*const navErrors = this.countNavigationErrors(
       navigationState,
       currentPlayer
     );
@@ -57,7 +57,7 @@ export class DungeonMaster {
       speed *= 0; // One navigation number incorrect
     } else if (navErrors >= 1) {
       speed *= 0.5; // Two or more navigation numbers incorrect
-    }
+    }*/
 
     // Apply engineering thrust penalty
     if (engineeringState) {
