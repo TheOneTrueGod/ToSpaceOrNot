@@ -28,7 +28,7 @@ export const HomePage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-blue-900 to-gray-900 flex flex-col items-center justify-center p-8">
       {/* Game Title */}
       <h1 className="text-6xl font-bold text-center mb-12 bg-gradient-to-r from-blue-400 via-purple-500 to-blue-600 bg-clip-text text-transparent">
-        STARSHIP COMMAND
+        SPACEBOUND
       </h1>
 
       {!selectedPlayer ? (
@@ -51,7 +51,7 @@ export const HomePage: React.FC = () => {
           {/* Welcome Description */}
           <div className="mb-12 max-w-2xl text-center">
             <p className="text-lg text-gray-200 leading-relaxed">
-              Welcome to Starship Command!
+              Welcome to Spacebound!
               <br />
               This is a two player game that involves communication to solve
               problems on your ships, so you can escape the solar system!.
