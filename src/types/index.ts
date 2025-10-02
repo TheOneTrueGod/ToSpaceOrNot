@@ -37,7 +37,7 @@ export const Players = {
 	PLAYER_TWO: 'Kestrel' as const,
 } as const;
 
-export type Player = typeof Players.PLAYER_ONE | typeof Players.PLAYER_TWO;
+export type Player = 'Albatross' | 'Kestrel';
 
 export type StationType = 'Engineering' | 'Navigation' | 'Weapons' | 'Science' | 'Main Screen';
 
