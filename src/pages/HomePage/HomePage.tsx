@@ -1,10 +1,13 @@
 import React, { useRef, useState } from "react";
 import { useDispatch } from "react-redux";
-import { setCurrentPlayer, setCurrentPage } from "../store/gameStore";
-import { resetNavigation } from "../store/stations/navigationStore";
-import { initializeForPlayer, cutRandomCablesAtStart } from "../store/stations/engineeringStore";
-import { RocketAnimation } from "../components/RocketAnimation";
-import { Player, Players } from "../types";
+import { setCurrentPlayer, setCurrentPage } from "../../store/gameStore";
+import { resetNavigation } from "../../store/stations/navigationStore";
+import {
+  initializeForPlayer,
+  cutRandomCablesAtStart,
+} from "../../store/stations/engineeringStore";
+import { RocketAnimation } from "../../components/RocketAnimation";
+import { Player, Players } from "../../types";
 
 export const HomePage: React.FC = () => {
   const dispatch = useDispatch();

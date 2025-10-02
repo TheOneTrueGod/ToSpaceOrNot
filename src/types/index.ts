@@ -1,86 +1,92 @@
 // Narrow type for ship systems that use { current, max }
 export type Gauge = { current: number; max: number };
 export interface ShipState {
-	distanceToDestination: Gauge;
-	hullDamage: Gauge;
-	oxygenLevels: Gauge;
-	navigationAlignment: number; // percentage
-	fuelLevels: Gauge;
-	batteryPower: Gauge;
-	gameClock: { minutes: number; seconds: number };
-	alerts: Alert[];
-	isOnBreak: boolean;
+  distanceToDestination: Gauge;
+  hullDamage: Gauge;
+  oxygenLevels: Gauge;
+  navigationAlignment: number; // percentage
+  fuelLevels: Gauge;
+  batteryPower: Gauge;
+  gameClock: { minutes: number; seconds: number };
+  alerts: Alert[];
+  isOnBreak: boolean;
 }
 
 export interface Alert {
-	id: string;
-	name: string;
-	timestamp: { minutes: number; seconds: number };
-	description: string;
-	severity: 'Normal' | 'Warning' | 'Danger' | 'Critical' | 'Success';
-	owner: Player;
-	systemEffects: SystemEffect[];
-	isActive: boolean;
-	type: 'manual' | 'automatic'; // Distinguishes DM-created vs status effect alerts
+  id: string;
+  name: string;
+  timestamp: { minutes: number; seconds: number };
+  description: string;
+  severity: "Normal" | "Warning" | "Danger" | "Critical" | "Success";
+  owner: Player;
+  systemEffects: SystemEffect[];
+  isActive: boolean;
+  type: "manual" | "automatic"; // Distinguishes DM-created vs status effect alerts
 }
 
 export interface SystemEffect {
-	system: keyof ShipState;
-	changePerInterval: number;
-	maxValue?: number;
-	minValue?: number;
+  system: keyof ShipState;
+  changePerInterval: number;
+  maxValue?: number;
+  minValue?: number;
 }
 
 // Player constants
 export const Players = {
-	PLAYER_ONE: 'Albatross' as const,
-	PLAYER_TWO: 'Kestrel' as const,
+  PLAYER_ONE: "Albatross" as const,
+  PLAYER_TWO: "Kestrel" as const,
 } as const;
 
-export type Player = 'Albatross' | 'Kestrel';
+export type Player = "Albatross" | "Kestrel";
 
-export type StationType = 'Engineering' | 'Navigation' | 'Weapons' | 'Science' | 'Main Screen';
+export type StationType =
+  | "Engineering"
+  | "Navigation"
+  | "Weapons"
+  | "Science"
+  | "Main Screen"
+  | "Nav Sync";
 
 export interface StationState {
-	[key: string]: unknown;
+  [key: string]: unknown;
 }
 
 export interface GameState {
-	currentPlayer: Player | null;
-	currentPage: string;
+  currentPlayer: Player | null;
+  currentPage: string;
 }
 
 export interface SystemChangeIndicator {
-	direction: 'increasing' | 'decreasing' | 'stable';
-	intensity: number; // 0-3 chevrons
+  direction: "increasing" | "decreasing" | "stable";
+  intensity: number; // 0-3 chevrons
 }
 
 // Ship quadrants based on distance traveled
 export enum Quadrant {
-	Alpha = 'Alpha',    // 0-250 km
-	Beta = 'Beta',      // 250-500 km
-	Gamma = 'Gamma',    // 500-750 km
-	Delta = 'Delta'     // 750-1000 km
+  Alpha = "Alpha", // 0-250 km
+  Beta = "Beta", // 250-500 km
+  Gamma = "Gamma", // 500-750 km
+  Delta = "Delta", // 750-1000 km
 }
 
 // Quadrant distance boundaries
 export const QUADRANT_BOUNDARIES = {
-	[Quadrant.Alpha]: { min: 0, max: 150 },
-	[Quadrant.Beta]: { min: 150, max: 400 },
-	[Quadrant.Gamma]: { min: 400, max: 700 },
-	[Quadrant.Delta]: { min: 700, max: 1000 }
+  [Quadrant.Alpha]: { min: 0, max: 150 },
+  [Quadrant.Beta]: { min: 150, max: 400 },
+  [Quadrant.Gamma]: { min: 400, max: 700 },
+  [Quadrant.Delta]: { min: 700, max: 1000 },
 } as const;
 
 // Helper function to get current quadrant based on distance traveled
 export function getQuadrant(distanceTraveled: number): Quadrant {
-	if (distanceTraveled <= QUADRANT_BOUNDARIES[Quadrant.Alpha].max) {
-		return Quadrant.Alpha;
-	}
-	if (distanceTraveled <= QUADRANT_BOUNDARIES[Quadrant.Beta].max) {
-		return Quadrant.Beta;
-	}
-	if (distanceTraveled <= QUADRANT_BOUNDARIES[Quadrant.Gamma].max) {
-		return Quadrant.Gamma;
-	}
-	return Quadrant.Delta;
+  if (distanceTraveled <= QUADRANT_BOUNDARIES[Quadrant.Alpha].max) {
+    return Quadrant.Alpha;
+  }
+  if (distanceTraveled <= QUADRANT_BOUNDARIES[Quadrant.Beta].max) {
+    return Quadrant.Beta;
+  }
+  if (distanceTraveled <= QUADRANT_BOUNDARIES[Quadrant.Gamma].max) {
+    return Quadrant.Gamma;
+  }
+  return Quadrant.Delta;
 }

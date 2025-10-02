@@ -1,18 +1,19 @@
-import React from 'react';
-import { Provider } from 'react-redux';
-import { useSelector } from 'react-redux';
-import { store, RootState } from './store';
-import { HomePage } from './pages/HomePage';
-import { PlayPage } from './pages/PlayPage';
+import React from "react";
+import { Provider } from "react-redux";
+import { useSelector } from "react-redux";
+import { store, RootState } from "./store";
+import { HomePage } from "./pages/HomePage/HomePage";
+import { PlayPageMobile } from "./pages/PlayPageMobile";
+import { HomePageMobile } from "./pages/HomePage/HomePageMobile";
 
 const AppContent: React.FC = () => {
   const currentPage = useSelector((state: RootState) => state.game.currentPage);
 
   switch (currentPage) {
-    case 'play':
-      return <PlayPage />;
+    case "play":
+      return <PlayPageMobile />;
     default:
-      return <HomePage />;
+      return <HomePageMobile />;
   }
 };
 

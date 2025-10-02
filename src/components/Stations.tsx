@@ -6,6 +6,7 @@ import { StationType } from "../types";
 import { Engineering } from "../stations/Engineering";
 import { Science } from "../stations/Science";
 import { MainScreen } from "../stations/MainScreen";
+import { NavSync } from "../stations/NavSync";
 
 /*const playerStations: Record<Player, StationType[]> = {
   [Players.PLAYER_ONE]: ['Engineering', 'Weapons'],
@@ -13,6 +14,7 @@ import { MainScreen } from "../stations/MainScreen";
 };*/
 const allStations: StationType[] = [
   "Main Screen",
+  "Nav Sync",
   "Science",
   "Engineering",
 ];
@@ -124,6 +126,8 @@ const StationContent: React.FC<{ station: StationType }> = ({ station }) => {
       return <Science />;
     case "Main Screen":
       return <MainScreen />;
+    case "Nav Sync":
+      return <NavSync />;
     default:
       return <DefaultStationCanvas station={station} />;
   }
